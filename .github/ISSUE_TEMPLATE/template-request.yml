@@ -1,12 +1,12 @@
 name: Template request
-description: A web app does not work as custom and needs a template
+description: Ask for a template for any web app
 title: "[Template] "
 labels: ["template-request"]
 body:
   - type: markdown
     attributes:
       value: |
-        Please try the app as custom first (no template). A template helps when the app breaks under a subpath, should take the Home Assistant user from a header or shows broken characters.
+        Every app is welcome. A template brings the right icon, admin default and setup notes, and handles what an app needs beyond a plain proxy (a subpath, a login by header, a legacy charset). Fill in what you know, the rest we find out.
   - type: input
     id: app
     attributes:
@@ -20,41 +20,28 @@ body:
     attributes:
       label: Version you use
       placeholder: "11.3.0"
-    validations:
-      required: true
   - type: dropdown
     id: basepath
     attributes:
       label: Can the app run under a subpath?
       options:
+        - "Don't know"
         - "Yes, it reads a header (e.g. X-Ingress-Path, X-Forwarded-Prefix)"
         - "Yes, with its own setting (e.g. a base URL)"
         - "No"
-        - "Don't know"
-    validations:
-      required: true
   - type: dropdown
     id: auth
     attributes:
       label: Can the app take the logged-in user from a header?
       options:
+        - "Don't know"
         - "Yes"
         - "No"
-        - "Don't know"
-    validations:
-      required: true
   - type: textarea
-    id: auth_details
+    id: notes
     attributes:
-      label: Header login details
-      description: Header names, how roles are set, link to the docs of the app
-  - type: textarea
-    id: broken
-    attributes:
-      label: What breaks as custom?
-      description: Blank page, wrong links, login loop, broken characters … Errors from the browser console (F12) and failed requests from the network tab help most.
-    validations:
-      required: true
+      label: Anything else
+      description: Links to the docs, header login details, things you noticed
   - type: checkboxes
     id: testing
     attributes:
