@@ -58,6 +58,16 @@ http {
             try_files /index-$ha_role.html =404;
         }
 
+        # service list and catalog for the companion integration, which runs in
+        # Home Assistant Core (host network, reaches add-ons from 172.30.32.1)
+        location ~ ^/_(services|catalog)\.json$ {
+            allow 172.30.32.1;
+            allow 127.0.0.1;
+            deny  all;
+            root /usr/share/nginx/html;
+            default_type application/json;
+        }
+
         include /etc/nginx/services.conf;
 
         location / {

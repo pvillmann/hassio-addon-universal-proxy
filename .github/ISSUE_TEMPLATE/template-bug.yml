@@ -1,0 +1,37 @@
+name: Template does not work
+description: An app with a template is broken
+title: "[Template bug] "
+labels: ["template-bug"]
+body:
+  - type: input
+    id: template
+    attributes:
+      label: Template and revision
+      description: The add-on log shows both at start, e.g. "template frigate rev 2"
+      placeholder: frigate rev 2
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+    validations:
+      required: true
+  - type: input
+    id: addon
+    attributes:
+      label: Add-on version
+    validations:
+      required: true
+  - type: textarea
+    id: broken
+    attributes:
+      label: What is broken?
+      description: Which page, what happens, errors from the browser console (F12) or the network tab
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Add-on log
+      render: text

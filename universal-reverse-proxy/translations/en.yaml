@@ -1,13 +1,42 @@
 configuration:
+  catalog_updates:
+    name: Template updates
+    description: >
+      Load new and improved templates from the catalog on GitHub, at start and
+      once a day. Every template is checked before it is used. Off: only the
+      templates of this add-on version.
   services:
     name: Services
     description: >
-      One entry per web app. name: sidebar title and path (/evcc/). template:
-      custom (default) or a known app (evcc, frigate, openccu) that brings the
-      right settings. url: where Home Assistant reaches the app. secret: for
-      templates that need one (frigate). icon: mdi icon (optional).
-      admin_only: admins only, others get no sidebar entry and no access
-      (optional). user_headers: send the Home Assistant user as Remote-User
-      and the role as Remote-Role/Remote-Groups (optional). headers: extra
-      fixed headers "Name: value" (optional). The sidebar entries need the
-      companion integration "Universal Proxy" (HACS, same repository).
+      One entry per web app. The sidebar entries need the companion
+      integration "Universal Proxy" (HACS, same repository).
+    fields:
+      name:
+        name: Name
+        description: Sidebar title, also the path (lowercase, e.g. /evcc/).
+      template:
+        name: Template
+        description: >
+          A known app (list in the Documentation tab, e.g. evcc, frigate,
+          openccu) or empty for any other app (custom).
+      url:
+        name: URL
+        description: Where Home Assistant reaches the app, e.g. http://192.168.1.50:7070.
+      secret:
+        name: Secret
+        description: Only for templates that need one (frigate). Leave empty otherwise.
+      icon:
+        name: Icon
+        description: Any mdi icon, e.g. mdi:web. Empty = the template's icon.
+      admin_only:
+        name: Admins only
+        description: Others get no sidebar entry and no access. Empty = the template's setting.
+      user_headers:
+        name: User headers
+        description: >
+          For your own apps (templates set this themselves): send the Home
+          Assistant user as Remote-User and the role (admin/viewer) as
+          Remote-Role and Remote-Groups.
+      headers:
+        name: Extra headers
+        description: For your own apps, fixed headers "Name: value".

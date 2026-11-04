@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+- Template catalog: templates now live on the `catalog` branch of the repository. The add-on loads it at start and once a day and applies new or improved templates without an update (nginx reload, no restart). Each template is checked before use, a broken one is skipped and the previous version stays. Off with `catalog_updates: false`.
+- Template format 1: a template states which fields it needs (e.g. `secret` for Frigate), with help texts and setup notes. The add-on log shows template and revision per service.
+- `template` accepts any catalog template, not only a fixed list
+- Field descriptions in the configuration form
+- The integration takes icon and admin setting from the add-on, also for catalog templates
+- GitHub: issue forms "Template request" and "Template does not work", CI checks every template and the nginx config
+
 ## 0.5.2
 
 - `openccu`: umlauts really fixed. The CCU sends `charset=iso-8859-1` in the header, nginx only recodes such answers with `override_charset on`.

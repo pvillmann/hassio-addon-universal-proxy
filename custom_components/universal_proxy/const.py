@@ -12,8 +12,8 @@ PANEL_COMPONENT = "app"
 # The add-on's start page maps "/proxy-<service>" to the service path.
 PANEL_PREFIX = "proxy-"
 
-# Defaults of the add-on's templates (universal-reverse-proxy/templates/*.json)
-# the sidebar needs: icon and admin flag. Keep in sync with the add-on.
+# Icon and admin flag of the bundled templates, only used while the add-on is
+# not running (otherwise the add-on reports its services itself).
 TEMPLATE_DEFAULTS: dict[str, dict] = {
     "evcc": {"icon": "mdi:ev-station"},
     "frigate": {"icon": "mdi:cctv"},

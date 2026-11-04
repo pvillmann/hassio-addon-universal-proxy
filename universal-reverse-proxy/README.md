@@ -12,6 +12,6 @@ services:
     icon: mdi:chart-line
 ```
 
-Templates for known apps: `evcc`, `frigate`, `openccu`. Everything else is `custom`.
+Templates for known apps come from a catalog that is updated without add-on updates (currently `evcc`, `frigate`, `openccu`). Everything else is `custom`.
 
 See the Documentation tab for setup, security notes and limits.

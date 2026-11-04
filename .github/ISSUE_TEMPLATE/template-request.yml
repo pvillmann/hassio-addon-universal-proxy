@@ -1,0 +1,63 @@
+name: Template request
+description: A web app does not work as custom and needs a template
+title: "[Template] "
+labels: ["template-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please try the app as custom first (no template). A template helps when the app breaks under a subpath, should take the Home Assistant user from a header or shows broken characters.
+  - type: input
+    id: app
+    attributes:
+      label: App
+      description: Name and link to the website or repository
+      placeholder: Grafana, https://grafana.com
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version you use
+      placeholder: "11.3.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: basepath
+    attributes:
+      label: Can the app run under a subpath?
+      options:
+        - "Yes, it reads a header (e.g. X-Ingress-Path, X-Forwarded-Prefix)"
+        - "Yes, with its own setting (e.g. a base URL)"
+        - "No"
+        - "Don't know"
+    validations:
+      required: true
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Can the app take the logged-in user from a header?
+      options:
+        - "Yes"
+        - "No"
+        - "Don't know"
+    validations:
+      required: true
+  - type: textarea
+    id: auth_details
+    attributes:
+      label: Header login details
+      description: Header names, how roles are set, link to the docs of the app
+  - type: textarea
+    id: broken
+    attributes:
+      label: What breaks as custom?
+      description: Blank page, wrong links, login loop, broken characters … Errors from the browser console (F12) and failed requests from the network tab help most.
+    validations:
+      required: true
+  - type: checkboxes
+    id: testing
+    attributes:
+      label: Testing
+      options:
+        - label: I can test a template before it is published

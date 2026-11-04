@@ -1,7 +1,23 @@
 {
-  "title": "Frigate",
+  "format": 1,
+  "id": "frigate",
+  "name": "Frigate NVR",
+  "revision": 1,
+  "min_addon": "0.6.0",
+  "tested_with": "Frigate 0.18",
+  "homepage": "https://frigate.video",
   "icon": "mdi:cctv",
   "user_headers": true,
-  "secret_header": "X-Proxy-Secret",
-  "notes": "Use the authenticated port 8971 (https). Frigate config: proxy.auth_secret = secret, header_map.user = remote-user, header_map.role = remote-groups, default_role = viewer."
+  "fields": {
+    "url": {
+      "example": "https://192.168.1.60:8971",
+      "help": "The authenticated port 8971 (https), not 5000."
+    },
+    "secret": {
+      "required": true,
+      "header": "X-Proxy-Secret",
+      "help": "Long random string, the same as proxy.auth_secret in the Frigate config."
+    }
+  },
+  "setup": "Home Assistant admins become Frigate admins, everyone else viewer. Add to the Frigate config:\n\n```yaml\nauth:\n  proxy:\n    auth_secret: <same secret>\n    header_map:\n      user: remote-user\n      role: remote-groups\n    default_role: viewer\n```"
 }

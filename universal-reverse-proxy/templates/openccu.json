@@ -1,65 +1,81 @@
 {
-  "title": "OpenCCU",
+  "format": 1,
+  "id": "openccu",
+  "name": "OpenCCU",
+  "revision": 1,
+  "min_addon": "0.6.0",
+  "tested_with": "OpenCCU 3.89",
+  "homepage": "https://github.com/OpenCCU/OpenCCU",
   "icon": "mdi:router-wireless",
   "admin_only": true,
-  "rewrite_paths": [
-    "/api",
-    "/webui",
-    "/ise",
-    "/pda",
-    "/config",
-    "/pages",
-    "/jpages",
-    "/esp",
-    "/upnp",
-    "/tools",
-    "/addons",
-    "/tailscale"
-  ],
-  "rewrite_leads": [
-    "\"",
-    "'",
-    "=",
-    " ",
-    "(",
-    "\\",
-    "\\u0027"
-  ],
-  "rewrite_suffixes": [
-    "/",
-    "\\/"
-  ],
-  "rewrite": [
-    {
-      "from": "\"/index.htm",
-      "to": "\"{base}/index.htm"
-    },
-    {
-      "from": "'/index.htm",
-      "to": "'{base}/index.htm"
-    },
-    {
-      "from": "\"/login.htm",
-      "to": "\"{base}/login.htm"
-    },
-    {
-      "from": "'/login.htm",
-      "to": "'{base}/login.htm"
-    },
-    {
-      "from": "\"/logout.htm",
-      "to": "\"{base}/logout.htm"
-    },
-    {
-      "from": "'/logout.htm",
-      "to": "'{base}/logout.htm"
-    },
-    {
-      "from": "window.location.href='/'",
-      "to": "window.location.href='{base}/'"
+  "fields": {
+    "url": {
+      "example": "http://192.168.1.70",
+      "help": "Address of the OpenCCU WebUI."
     }
-  ],
-  "source_charset": "iso-8859-1",
-  "recode_skip": "/jpages/",
-  "notes": "Rewrites the absolute paths of the WebUI like the official OpenCCU proxy add-on. Allow Home Assistant in the OpenCCU firewall."
+  },
+  "setup": "Rewrites the absolute paths of the WebUI and recodes its ISO-8859-1 answers, like the official OpenCCU proxy add-on. Allow Home Assistant in the OpenCCU firewall.",
+  "rewrite": {
+    "paths": [
+      "/api",
+      "/webui",
+      "/ise",
+      "/pda",
+      "/config",
+      "/pages",
+      "/jpages",
+      "/esp",
+      "/upnp",
+      "/tools",
+      "/addons",
+      "/tailscale"
+    ],
+    "leads": [
+      "\"",
+      "'",
+      "=",
+      " ",
+      "(",
+      "\\",
+      "\\u0027"
+    ],
+    "suffixes": [
+      "/",
+      "\\/"
+    ],
+    "rules": [
+      {
+        "from": "\"/index.htm",
+        "to": "\"{base}/index.htm"
+      },
+      {
+        "from": "'/index.htm",
+        "to": "'{base}/index.htm"
+      },
+      {
+        "from": "\"/login.htm",
+        "to": "\"{base}/login.htm"
+      },
+      {
+        "from": "'/login.htm",
+        "to": "'{base}/login.htm"
+      },
+      {
+        "from": "\"/logout.htm",
+        "to": "\"{base}/logout.htm"
+      },
+      {
+        "from": "'/logout.htm",
+        "to": "'{base}/logout.htm"
+      },
+      {
+        "from": "window.location.href='/'",
+        "to": "window.location.href='{base}/'"
+      }
+    ]
+  },
+  "charset": {
+    "source": "iso-8859-1",
+    "skip": "/jpages/"
+  }
 }

@@ -40,9 +40,15 @@ services:
 | `user_headers` | no | Send the Home Assistant user as `Remote-User` (username) and the role (`admin` or `viewer`) as `Remote-Role` and `Remote-Groups`. |
 | `headers` | no | Extra fixed headers, `Name: value` (no `$ " \ ; { }`), e.g. a shared secret. |
 
-Your own settings always win over the template's. The integration picks up changes within a minute. The add-on needs a restart after changing services. At start the log tells you for every service whether Home Assistant can reach it.
+Your own settings always win over the template's. The integration picks up changes within a minute. The add-on needs a restart after changing services. At start the log tells you for every service the template revision in use and whether Home Assistant can reach it.
+
+| Option | Description |
+|---|---|
+| `catalog_updates` | Default on. Load new and improved templates from the catalog on GitHub, at start and once a day (see [Template catalog](#template-catalog)). Off: only the templates of this add-on version. |
 
 ## Templates
+
+Templates of this add-on version (the [catalog](#template-catalog) may have more):
 
 | Template | What it does | You set |
 |---|---|---|
@@ -65,9 +71,13 @@ proxy:
 
 The secret makes sure nobody else in the network can send these headers to Frigate's port 8971. Frigate hands only some headers to its auth check (`Remote-User`, `Remote-Groups`, …, but not `Remote-Role`), so the role comes from `remote-groups`. If Frigate is also reachable through another reverse proxy, let that proxy send the secret and overwrite `Remote-User` and `Remote-Groups` (e.g. fixed `viewer`), otherwise a client could send its own.
 
-### New templates
+## Template catalog
 
-A template is a small JSON file in `universal-reverse-proxy/templates/`, pull requests welcome. Keys: `icon`, `admin_only`, `user_headers`, `secret_header`, `headers`, and for apps with absolute paths `rewrite_paths`, `rewrite_leads`, `rewrite_suffixes` and `rewrite` (`{"from": …, "to": …}`, `{base}` = path of the service), for apps with a legacy charset `source_charset` (answers to POST requests are recoded to UTF-8, the Supervisor drops the charset header) and `recode_skip`. Add icon and admin default to `TEMPLATE_DEFAULTS` of the integration too.
+Templates live on the [`catalog` branch](https://github.com/pvillmann/hassio-addon-universal-proxy/tree/catalog) of the repository. With `catalog_updates` on, the add-on downloads it at start and once a day. When a template you use changes, the add-on rebuilds its config and reloads nginx, without a restart. Without internet it uses the last catalog it loaded, otherwise the templates of this add-on version.
+
+Every template is checked before it is used, in GitHub and again in the add-on. Templates can only move paths of the app below the service path (`{base}`), set a few allowed headers and recode a legacy charset. They can't put any other text into pages: the apps run on the same address as Home Assistant, a template that could add scripts could also read your Home Assistant login. A template that fails the checks or needs a newer add-on is skipped, the log says why.
+
+Missing an app? [Request a template](https://github.com/pvillmann/hassio-addon-universal-proxy/issues/new?template=template-request.yml). The format is described in the README of the catalog branch, pull requests go to that branch.
 
 ## Security
 
@@ -76,6 +86,8 @@ A template is a small JSON file in `universal-reverse-proxy/templates/`, pull re
 - `Remote-User`, `Remote-Role` and `Remote-Groups` are always set by the proxy (empty when `user_headers` is off), so a browser can't inject them. The `X-Remote-User-*` headers are not passed on to the apps.
 - Like the single-app proxies, the add-on removes `X-Frame-Options` and `Content-Security-Policy` from responses so the apps can be shown inside Home Assistant.
 - https upstreams are not verified (self-signed certificates are common on the LAN).
+- Templates from the catalog are checked before use, see [Template catalog](#template-catalog). Turn `catalog_updates` off to use only the templates that come with the add-on version you installed.
+- Home Assistant Core may read the service list (names, icons, admin setting, no secrets) from the add-on for the sidebar entries.
 
 ## Apps under a subpath
 
