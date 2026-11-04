@@ -39,4 +39,4 @@ configuration:
           Remote-Role and Remote-Groups.
       headers:
         name: Extra headers
-        description: For your own apps, fixed headers "Name: value".
+        description: 'For your own apps, fixed headers "Name: value".'

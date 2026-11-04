@@ -12,5 +12,71 @@
       "addon_not_installed": "Install the Universal Reverse Proxy add-on first.",
       "already_configured": "Already set up."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Universal Proxy",
+        "menu_options": {
+          "add": "Add a service",
+          "edit": "Edit a service",
+          "remove": "Remove a service"
+        }
+      },
+      "add": {
+        "title": "Add a service",
+        "description": "Pick the app. {count} templates are in the catalog, they bring the right settings. **custom** works for any other app.",
+        "data": {
+          "template": "Template"
+        }
+      },
+      "service": {
+        "title": "{template}",
+        "description": "{info}",
+        "data": {
+          "name": "Name",
+          "url": "URL",
+          "secret": "Secret",
+          "icon": "Icon",
+          "admin_only": "Admins only",
+          "user_headers": "Send the user as header",
+          "headers": "Extra headers"
+        },
+        "data_description": {
+          "name": "Sidebar title, also the path (lowercase).",
+          "url": "Where Home Assistant reaches the app.",
+          "admin_only": "Others get no sidebar entry and no access.",
+          "user_headers": "Remote-User (username), Remote-Role and Remote-Groups (admin or viewer).",
+          "headers": "Fixed headers, Name: value"
+        }
+      },
+      "edit": {
+        "title": "Edit a service",
+        "data": {
+          "service": "Service"
+        }
+      },
+      "remove": {
+        "title": "Remove a service",
+        "description": "The service is removed and the add-on restarts.",
+        "data": {
+          "service": "Service"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name needs at least one letter or digit.",
+      "name_taken": "Another service already uses this name (path).",
+      "invalid_url": "Expected http(s)://host:port",
+      "secret_required": "This template needs a secret.",
+      "invalid_header": "Expected Name: value, without $ \" \\ ; { }",
+      "last_service": "The add-on needs at least one service."
+    },
+    "abort": {
+      "cannot_connect": "Cannot reach the Supervisor.",
+      "addon_not_running": "Start the Universal Reverse Proxy add-on (version 0.6 or newer) first.",
+      "invalid_options": "The add-on rejected the options: {message}",
+      "save_failed": "Saving failed: {message}"
+    }
   }
 }

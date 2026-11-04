@@ -12,5 +12,71 @@
       "addon_not_installed": "Bitte zuerst das Add-on Universal Reverse Proxy installieren.",
       "already_configured": "Bereits eingerichtet."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Universal Proxy",
+        "menu_options": {
+          "add": "Dienst hinzufügen",
+          "edit": "Dienst bearbeiten",
+          "remove": "Dienst entfernen"
+        }
+      },
+      "add": {
+        "title": "Dienst hinzufügen",
+        "description": "App auswählen. Im Katalog sind {count} Templates, sie bringen die passenden Einstellungen mit. **custom** passt für jede andere App.",
+        "data": {
+          "template": "Template"
+        }
+      },
+      "service": {
+        "title": "{template}",
+        "description": "{info}",
+        "data": {
+          "name": "Name",
+          "url": "URL",
+          "secret": "Secret",
+          "icon": "Icon",
+          "admin_only": "Nur für Admins",
+          "user_headers": "Benutzer als Header mitschicken",
+          "headers": "Zusätzliche Header"
+        },
+        "data_description": {
+          "name": "Titel in der Seitenleiste, auch der Pfad (klein geschrieben).",
+          "url": "Unter dieser Adresse erreicht Home Assistant die App.",
+          "admin_only": "Alle anderen sehen keinen Eintrag und haben keinen Zugriff.",
+          "user_headers": "Remote-User (Benutzername), Remote-Role und Remote-Groups (admin oder viewer).",
+          "headers": "Feste Header, Name: Wert"
+        }
+      },
+      "edit": {
+        "title": "Dienst bearbeiten",
+        "data": {
+          "service": "Dienst"
+        }
+      },
+      "remove": {
+        "title": "Dienst entfernen",
+        "description": "Der Dienst wird entfernt und das Add-on neu gestartet.",
+        "data": {
+          "service": "Dienst"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Der Name braucht mindestens einen Buchstaben oder eine Ziffer.",
+      "name_taken": "Ein anderer Dienst nutzt diesen Namen (Pfad) schon.",
+      "invalid_url": "Erwartet: http(s)://host:port",
+      "secret_required": "Dieses Template braucht ein Secret.",
+      "invalid_header": "Erwartet: Name: Wert, ohne $ \" \\ ; { }",
+      "last_service": "Das Add-on braucht mindestens einen Dienst."
+    },
+    "abort": {
+      "cannot_connect": "Supervisor nicht erreichbar.",
+      "addon_not_running": "Bitte zuerst das Add-on Universal Reverse Proxy starten (ab Version 0.6).",
+      "invalid_options": "Das Add-on hat die Optionen abgelehnt: {message}",
+      "save_failed": "Speichern fehlgeschlagen: {message}"
+    }
   }
 }
