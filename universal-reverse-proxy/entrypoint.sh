@@ -65,6 +65,7 @@ fetch_catalog() {
 	rm -rf "$CACHE_DIR"
 	mv "$CACHE_DIR.new" "$CACHE_DIR"
 	rm -rf "$tmp"
+	echo "Template catalog loaded: $(ls "$CACHE_DIR" | grep -c '\.json$') template(s)."
 }
 
 # per template the highest revision this version can use, bundled or catalog

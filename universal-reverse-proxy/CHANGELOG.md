@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- The log says when the template catalog was loaded and how many templates it has
+
 ## 0.6.0
 
 - Template catalog: templates now live on the `catalog` branch of the repository. The add-on loads it at start and once a day and applies new or improved templates without an update (nginx reload, no restart). Each template is checked before use, a broken one is skipped and the previous version stays. Off with `catalog_updates: false`.
