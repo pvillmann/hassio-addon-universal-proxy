@@ -2,15 +2,16 @@
 
 Templates for the [Universal Reverse Proxy](https://github.com/pvillmann/hassio-addon-universal-proxy) add-on. The add-on downloads this branch at start and once a day, so a merged template reaches every installation within a day, without an add-on update. Before a release the templates are copied into the add-on as its fallback.
 
-Missing an app? [Request a template](https://github.com/pvillmann/hassio-addon-universal-proxy/issues/new?template=template-request.yml). Want to write one? Open a pull request against this branch (`catalog`, not `main`).
+Missing an app? Every app is welcome, [request a template](https://github.com/pvillmann/hassio-addon-universal-proxy/issues/new?template=template-request.yml). Want to write one? Open a pull request against this branch (`catalog`, not `main`).
 
-## When an app needs a template
+## Which apps
 
-Try the app as `custom` first. A template helps when
+Every app is welcome. Even an app that works as `custom` gets the right icon, a sensible admin default and setup notes from a template (Zigbee2MQTT is such a case). On top, a template handles what an app needs beyond a plain proxy:
 
-- the app breaks under a subpath (absolute links like `/api/…` in its pages or scripts),
-- it can take the logged-in user from headers (like Frigate),
-- it shows broken characters (legacy charset like ISO-8859-1).
+- absolute links in its pages or scripts (it breaks under a subpath),
+- a login from headers (like Frigate or Grafana),
+- a base path the app wants configured or sent in a header,
+- a legacy charset like ISO-8859-1.
 
 ## Format
 
