@@ -62,6 +62,10 @@
         "data": {
           "service": "Dienst"
         }
+      },
+      "done": {
+        "title": "Fast fertig",
+        "description": "Der Dienst ist gespeichert. Trag diesen Basispfad in der App ein, sonst lädt sie nicht:\n\n`{path}`\n\n{setup}"
       }
     },
     "error": {

@@ -90,6 +90,8 @@ class ServicesOptionsFlow(OptionsFlow):
         self._template: dict | None = None
         self._template_id = CUSTOM
         self._index: int | None = None  # service being edited
+        self._ingress = ""  # ingress path of the add-on, base of every service
+        self._done_path: str | None = None
 
     @property
     def _services(self) -> list[dict]:
@@ -108,6 +110,7 @@ class ServicesOptionsFlow(OptionsFlow):
         if catalog is None:
             return self.async_abort(reason="addon_not_running")
         self._options = dict(info.options)
+        self._ingress = (getattr(info, "ingress_entry", None) or "").rstrip("/")
         self._catalog = {t["id"]: t for t in catalog if isinstance(t.get("id"), str)}
 
         menu = ["add"]
@@ -233,6 +236,8 @@ class ServicesOptionsFlow(OptionsFlow):
                     self._services.append(service)
                 else:
                     self._services[self._index] = service
+                if self._uses_base():
+                    self._done_path = self._base_path(name)
                 return await self._async_save()
 
         schema: dict[Any, Any] = {
@@ -263,7 +268,10 @@ class ServicesOptionsFlow(OptionsFlow):
             errors=errors,
             description_placeholders={
                 "template": template.get("name", "custom"),
-                "info": self._template_info(bool(current.get("secret"))),
+                "info": self._template_info(
+                    bool(current.get("secret")),
+                    self._base_path(current.get("name") or template.get("name", "")),
+                ),
             },
         )
 
@@ -276,7 +284,15 @@ class ServicesOptionsFlow(OptionsFlow):
             # template no longer in the catalog: keep it, ask only the basics
             self._template = {"name": template_id, "fields": {"secret": {"required": False}}}
 
-    def _template_info(self, has_secret: bool) -> str:
+    def _uses_base(self) -> bool:
+        t = self._template or {}
+        return "{base}" in str(t.get("setup", "")) + str(t.get("fields", ""))
+
+    def _base_path(self, name: str) -> str:
+        """Path of a service as the app sees it, e.g. for a base URL setting."""
+        return f"{self._ingress}/{service_slug(name)}"
+
+    def _template_info(self, has_secret: bool, base: str = "") -> str:
         """Help text of the template for the form (Markdown)."""
         t = self._template or {}
         fields = t.get("fields") or {}
@@ -296,7 +312,13 @@ class ServicesOptionsFlow(OptionsFlow):
                 "Any web app. If it breaks under a subpath, a template may help: "
                 "[request one](https://github.com/pvillmann/hassio-addon-universal-proxy/issues/new?template=template-request.yml)."
             )
-        return "\n\n".join(lines)
+        text = "\n\n".join(lines)
+        if "{base}" in text:
+            text = text.replace("{base}", base) + (
+                "\n\n_The path ends with the name of the service. If you change the "
+                "name, the last part changes; it is shown again after saving._"
+            )
+        return text
 
     def _service_picker(self) -> vol.Schema:
         return vol.Schema(
@@ -340,4 +362,22 @@ class ServicesOptionsFlow(OptionsFlow):
         sync = getattr(self.config_entry, "runtime_data", None)
         if sync is not None:
             await sync()
+        if self._done_path:
+            return await self.async_step_done()
         return self.async_create_entry(data={})
+
+    async def async_step_done(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Last step for apps that need their base path configured."""
+        if user_input is not None:
+            return self.async_create_entry(data={})
+        t = self._template or {}
+        return self.async_show_form(
+            step_id="done",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "path": self._done_path or "",
+                "setup": str(t.get("setup", "")).replace("{base}", self._done_path or ""),
+            },
+        )

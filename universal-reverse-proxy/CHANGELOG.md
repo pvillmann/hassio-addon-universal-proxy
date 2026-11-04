@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+
+- Templates can send the service path in a header (`X-Forwarded-Prefix: {base}`, `X-Script-Name: {base}`), for apps that read their base path from there. Works in your own `headers` too.
+- Templates can map the roles to the values an app expects (`role_values`, e.g. Grafana `Admin`/`Viewer`)
+- Integration: for apps that need their base path configured, the setup dialog shows the exact path, and again after saving
+- `X-Forwarded-Prefix` is allowed in template headers; `X-Forwarded-For/-Proto/-Host/-Port` and `Forwarded` stay blocked
+
 ## 0.8.0
 
 - The add-on starts without services: a new installation needs no YAML, services are added in the integration's dialog
