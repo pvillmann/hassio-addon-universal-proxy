@@ -56,8 +56,9 @@ One file per app, `templates/<id>.json`, the file name is the id.
 | `icon`, `admin_only` | Defaults for the sidebar entry, users can override them. |
 | `user_headers` | Send the Home Assistant user as `Remote-User` and the role (`admin`/`viewer`) as `Remote-Role` and `Remote-Groups`. |
 | `fields` | What a user has to fill in: `url` (always, with `example` and `help`) and `secret` (with the `header` it is sent in, `required`, `help`). Nothing else is asked. |
-| `setup` | Notes for the user, e.g. what to change in the app's config. |
-| `headers` | Fixed headers sent to the app. |
+| `setup` | Notes for the user, e.g. what to change in the app's config. `{base}` shows the real service path in the setup dialog, for apps that need their base path configured (add-on 0.9.0+). |
+| `headers` | Fixed headers sent to the app. `{base}` is replaced with the service path, e.g. `"X-Forwarded-Prefix": "{base}"` (add-on 0.9.0+). |
+| `role_values` | Values for `admin` and `viewer` in the role headers, e.g. `{"admin": "Admin", "viewer": "Viewer"}` for Grafana (add-on 0.9.0+). |
 | `rewrite` | Absolute paths in answers get the service path in front: every combination of `leads` + `paths` + `suffixes` (defaults `"` `'` and `/`), plus single `rules`. `{base}` is the service path. |
 | `charset` | The app sends ISO-8859-1: answers to POST requests are recoded to UTF-8 (the Supervisor drops the charset header), except below `skip`. |
 
@@ -68,7 +69,8 @@ The apps run on the same address as Home Assistant. A template that could put an
 - `paths`: like `/api`, letters, digits and `. _ ~ / -`.
 - `leads`: `"` `'` `=` space `(` `\` `'`. `suffixes`: `/` `\/` `?` `"` `'`.
 - `rules`: `to` is `from` with `{base}` put in once, right before a `/`. No `$ < >`.
-- `headers` and the secret header: not `Host`, `Connection`, `Upgrade`, `X-Real-IP`, `X-Ingress-Path`, `Remote-*`, `X-Forwarded-*`, `X-Remote-User-*`. Values without `$ " \ ; { }`.
+- `headers` and the secret header: not `Host`, `Connection`, `Upgrade`, `X-Real-IP`, `X-Ingress-Path`, `Forwarded`, `X-Forwarded-For/-Proto/-Host/-Port`, `Remote-*`, `X-Remote-User-*`. Values without `$ " \ ; { }`, except the placeholder `{base}`.
+- `role_values`: letters, digits, `_` and `-`.
 - `charset.source`: `iso-8859-1`.
 - At most 500 rewrite rules.
 
