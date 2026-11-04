@@ -170,7 +170,7 @@ while [ "$i" -lt "$count" ]; do
             # answers to POST requests: $source_charset -> utf-8
             source_charset $source_charset;
             charset_types text/plain text/xml text/css text/javascript application/javascript application/json;
-            if (\$$var) { charset utf-8; }"
+            if (\$$var) { charset utf-8; override_charset on; }"
 	fi
 
 	cat >> "$SERVICES_FILE" <<CONF

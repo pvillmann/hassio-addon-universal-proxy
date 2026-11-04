@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- `openccu`: umlauts really fixed. The CCU sends `charset=iso-8859-1` in the header, nginx only recodes such answers with `override_charset on`.
+
 ## 0.5.1
 
 - `openccu`: umlauts in AJAX answers. The Supervisor drops the charset from `Content-Type`, so browsers read the CCU's ISO-8859-1 answers as UTF-8. Answers to POST requests are now recoded to UTF-8 (like the official OpenCCU proxy), pages keep their own charset.
