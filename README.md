@@ -101,7 +101,7 @@ All options: [DOCS.md](universal-reverse-proxy/DOCS.md).
 
 ## Templates
 
-Most apps work as **custom**. Some need more: absolute links that break under a subpath, a login by header, a legacy charset. Templates handle that.
+A template brings the right icon, admin default and setup notes for an app, and handles what it needs beyond a plain proxy: absolute links that break under a subpath, a login by header, a legacy charset. Apps without a template work as **custom**.
 
 | App | Template does |
 |---|---|
@@ -111,7 +111,7 @@ Most apps work as **custom**. Some need more: absolute links that break under a 
 
 Templates live on the [`catalog` branch](../../tree/catalog). The add-on loads it at start and once a day, so new templates arrive without an update. Every template is checked before it is used: templates can only move paths and set a few allowed headers, they can't put scripts into pages.
 
-**Your app is missing?** [Request a template](../../issues/new?template=template-request.yml). Writing one yourself: format and rules are in the README of the catalog branch, pull requests go there.
+**Your app is missing?** Every app is welcome, [request a template](../../issues/new?template=template-request.yml). Writing one yourself: format and rules are in the README of the catalog branch, pull requests go there.
 
 ## More
 
