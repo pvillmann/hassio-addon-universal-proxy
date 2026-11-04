@@ -61,6 +61,7 @@ http {
         # service list and catalog for the companion integration, which runs in
         # Home Assistant Core (host network, reaches add-ons from 172.30.32.1)
         location ~ ^/_(services|catalog)\.json$ {
+            access_log off;
             allow 172.30.32.1;
             allow 127.0.0.1;
             deny  all;

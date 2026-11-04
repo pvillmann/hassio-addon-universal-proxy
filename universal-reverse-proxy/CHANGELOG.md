@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2
+
+- The integration's request for the service list (once a minute) no longer shows up in the log
+
 ## 0.6.1
 
 - The log says when the template catalog was loaded and how many templates it has
