@@ -1,10 +1,13 @@
 #!/bin/sh
 set -eu
 
-OPTIONS_FILE="/data/options.json"
-SERVICES_FILE="/etc/nginx/services.conf"
-COMMON_FILE="/etc/nginx/proxy_common.conf"
-HTML_DIR="/usr/share/nginx/html"
+# paths can be overridden for local tests
+OPTIONS_FILE="${OPTIONS_FILE:-/data/options.json}"
+NGINX_DIR="${NGINX_DIR:-/etc/nginx}"
+TEMPLATE_DIR="${TEMPLATE_DIR:-/etc/nginx/templates}"
+HTML_DIR="${HTML_DIR:-/usr/share/nginx/html}"
+SERVICES_FILE="$NGINX_DIR/services.conf"
+COMMON_FILE="$NGINX_DIR/proxy_common.conf"
 
 if [ ! -f "$OPTIONS_FILE" ]; then
 	echo "Missing options file: $OPTIONS_FILE"
@@ -27,21 +30,41 @@ html_escape() {
 	printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
 }
 
+# nginx double-quoted string: escape \ and "
+nginx_quote() {
+	printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+}
+
 : > "$SERVICES_FILE"
 slugs=""
 slugs_all=""
 slugs_viewer=""
 links_all=""
 links_viewer=""
+checks=""
 
 i=0
 while [ "$i" -lt "$count" ]; do
-	svc=$(jq -c ".services[$i]" "$OPTIONS_FILE")
+	raw=$(jq -c ".services[$i]" "$OPTIONS_FILE")
 	i=$((i + 1))
-	name=$(printf '%s' "$svc" | jq -r '.name')
+	name=$(printf '%s' "$raw" | jq -r '.name')
+	template=$(printf '%s' "$raw" | jq -r '.template // "custom"')
+
+	# a template provides defaults, the service's own settings win
+	if [ "$template" = "custom" ]; then
+		svc="$raw"
+	elif [ -f "$TEMPLATE_DIR/$template.json" ]; then
+		svc=$(jq -c --argjson s "$raw" '. + $s' "$TEMPLATE_DIR/$template.json")
+	else
+		echo "Service '$name': unknown template '$template'."
+		exit 1
+	fi
+
 	url=$(printf '%s' "$svc" | jq -r '.url' | sed 's#/*$##')
 	admin_only=$(printf '%s' "$svc" | jq -r '.admin_only // false')
 	user_headers=$(printf '%s' "$svc" | jq -r '.user_headers // false')
+	secret=$(printf '%s' "$svc" | jq -r '.secret // ""')
+	secret_header=$(printf '%s' "$svc" | jq -r '.secret_header // ""')
 	slug=$(slugify "$name")
 
 	if [ -z "$slug" ]; then
@@ -73,16 +96,25 @@ while [ "$i" -lt "$count" ]; do
 		role_value='""'
 	fi
 
+	# fixed headers: "Name: value" entries plus the template's secret header
+	headers=$(printf '%s' "$svc" | jq -c '.headers // []')
+	if [ -n "$secret_header" ]; then
+		if [ -z "$secret" ]; then
+			echo "Service '$name': template '$template' needs a secret (sent as $secret_header)."
+			exit 1
+		fi
+		headers=$(printf '%s' "$headers" | jq -c --arg h "$secret_header: $secret" '. + [$h]')
+	fi
 	extra=""
 	j=0
-	n=$(printf '%s' "$svc" | jq -r '.headers // [] | length')
+	n=$(printf '%s' "$headers" | jq -r 'length')
 	while [ "$j" -lt "$n" ]; do
-		h=$(printf '%s' "$svc" | jq -r ".headers[$j]")
+		h=$(printf '%s' "$headers" | jq -r ".[$j]")
 		j=$((j + 1))
 		hname=$(printf '%s' "$h" | sed -E 's/^([^:]*):.*/\1/' | sed -E 's/^ +| +$//g')
 		hvalue=$(printf '%s' "$h" | sed -E 's/^[^:]*: *//')
 		if [ "$hname" = "$h" ] || ! printf '%s' "$hname" | grep -Eq '^[A-Za-z0-9-]+$'; then
-			echo "Service '$name': invalid header '$h', expected 'Name: value'"
+			echo "Service '$name': invalid header '$hname', expected 'Name: value'"
 			exit 1
 		fi
 		if printf '%s' "$hvalue" | grep -q '[$"\;{}]'; then
@@ -93,7 +125,33 @@ while [ "$i" -lt "$count" ]; do
             proxy_set_header $hname \"$hvalue\";"
 	done
 
-	cat >> "$SERVICES_FILE" <<EOF
+	# apps with absolute paths: put the ingress path in front of them in the
+	# responses (templates only, the rules are app specific)
+	rewrite=""
+	rules=$(printf '%s' "$svc" | jq -c '
+		[ (.rewrite_paths // [])[] as $p | (.rewrite_leads // ["\"", "'"'"'"])[] as $l
+		  | (.rewrite_suffixes // ["/"])[] as $e
+		  | {from: ($l + $p + $e), to: ($l + "{base}" + $p + $e)} ]
+		+ (.rewrite // [])')
+	nrules=$(printf '%s' "$rules" | jq -r 'length')
+	if [ "$nrules" -gt 0 ]; then
+		rewrite="
+            # rewrite absolute paths in responses (template $template)
+            proxy_set_header Accept-Encoding \"\";
+            sub_filter_once off;
+            sub_filter_types text/css text/javascript application/javascript application/x-javascript application/json;"
+		k=0
+		while [ "$k" -lt "$nrules" ]; do
+			from=$(printf '%s' "$rules" | jq -r ".[$k].from")
+			to=$(printf '%s' "$rules" | jq -r ".[$k].to")
+			k=$((k + 1))
+			to_q=$(nginx_quote "$to" | sed "s#{base}#\$http_x_ingress_path/${slug}#g")
+			rewrite="$rewrite
+            sub_filter $(nginx_quote "$from") $to_q;"
+		done
+	fi
+
+	cat >> "$SERVICES_FILE" <<CONF
         location = /${slug} {
             ${guard}
             return 302 \$http_x_ingress_path/${slug}/;
@@ -108,9 +166,12 @@ while [ "$i" -lt "$count" ]; do
             proxy_set_header Remote-User ${user_value};
             proxy_set_header Remote-Role ${role_value};
             proxy_set_header Remote-Groups ${role_value};${extra}
+            # redirects to an absolute path stay inside the service
+            proxy_redirect ${url}/ \$http_x_ingress_path/${slug}/;
+            proxy_redirect ~^/(?!api/hassio_ingress/)(.*)\$ \$http_x_ingress_path/${slug}/\$1;${rewrite}
         }
 
-EOF
+CONF
 	link="<li><a href=\"${slug}/\">$(html_escape "$name")</a></li>"
 	links_all="$links_all$link"
 	slugs_all="$slugs_all $slug"
@@ -118,14 +179,21 @@ EOF
 		links_viewer="$links_viewer$link"
 		slugs_viewer="$slugs_viewer $slug"
 	fi
-	echo "Service '$name': /${slug}/ -> ${url}$([ "$admin_only" = true ] && echo ' (admin only)')$([ "$user_headers" = true ] && echo ' (user headers)')"
+	checks="$checks$name|$url
+"
+	info=""
+	[ "$template" != custom ] && info="$info, template $template"
+	[ "$admin_only" = true ] && info="$info, admin only"
+	[ "$user_headers" = true ] && info="$info, user headers"
+	[ "$nrules" -gt 0 ] && info="$info, $nrules rewrite rules"
+	echo "Service '$name': /${slug}/ -> ${url}${info:+ (${info#, })}"
 done
 
 write_index() {
 	file="$1"
 	slug_list=$(printf '%s' "$2" | jq -Rc 'split(" ") | map(select(. != ""))')
 	links="$3"
-	cat > "$file" <<EOF
+	cat > "$file" <<HTML
 <!doctype html>
 <html>
 <head>
@@ -172,14 +240,33 @@ body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
 </div>
 </body>
 </html>
-EOF
+HTML
 }
 
 mkdir -p "$HTML_DIR"
 write_index "$HTML_DIR/index-admin.html" "$slugs_all" "$links_all"
 write_index "$HTML_DIR/index-viewer.html" "$slugs_viewer" "$links_viewer"
 
-cp /etc/nginx/nginx.conf.gtpl /etc/nginx/nginx.conf
+# tell the user early if a service can't be reached (does not stop the add-on)
+check_services() {
+	printf '%s' "$checks" | while IFS='|' read -r cname curl_url; do
+		[ -n "$curl_url" ] || continue
+		code=$(curl -sk -o /dev/null --max-time 5 -w '%{http_code}' "$curl_url/" 2>/dev/null || true)
+		case "$code" in
+			000 | "") echo "WARNING: Service '$cname' is not reachable at $curl_url (check url, port and firewall)." ;;
+			5??) echo "WARNING: Service '$cname' answers with HTTP $code at $curl_url." ;;
+			*) echo "Service '$cname' reachable (HTTP $code)." ;;
+		esac
+	done
+}
+
+if [ -n "${NO_EXEC:-}" ]; then
+	check_services
+	exit 0
+fi
+
+cp "$NGINX_DIR/nginx.conf.gtpl" "$NGINX_DIR/nginx.conf"
 
 echo "Starting universal reverse proxy with ${count} service(s)"
+check_services &
 exec nginx -g 'daemon off;'

@@ -2,10 +2,12 @@ configuration:
   services:
     name: Services
     description: >
-      One entry per web app. name: sidebar title and path (/evcc/). url: where
-      Home Assistant reaches the app. icon: mdi icon (optional). admin_only:
-      admins only, others get no sidebar entry and no access (optional).
-      user_headers: send the Home Assistant user as Remote-User and the role as Remote-Role/Remote-Groups
-      (optional). headers: extra fixed headers "Name: value" (optional). The
-      sidebar entries need the companion integration "Universal Proxy" (HACS,
-      same repository).
+      One entry per web app. name: sidebar title and path (/evcc/). template:
+      custom (default) or a known app (evcc, frigate, openccu) that brings the
+      right settings. url: where Home Assistant reaches the app. secret: for
+      templates that need one (frigate). icon: mdi icon (optional).
+      admin_only: admins only, others get no sidebar entry and no access
+      (optional). user_headers: send the Home Assistant user as Remote-User
+      and the role as Remote-Role/Remote-Groups (optional). headers: extra
+      fixed headers "Name: value" (optional). The sidebar entries need the
+      companion integration "Universal Proxy" (HACS, same repository).

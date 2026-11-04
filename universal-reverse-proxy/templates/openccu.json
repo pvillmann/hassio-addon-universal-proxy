@@ -1,0 +1,63 @@
+{
+  "title": "OpenCCU",
+  "icon": "mdi:router-wireless",
+  "admin_only": true,
+  "rewrite_paths": [
+    "/api",
+    "/webui",
+    "/ise",
+    "/pda",
+    "/config",
+    "/pages",
+    "/jpages",
+    "/esp",
+    "/upnp",
+    "/tools",
+    "/addons",
+    "/tailscale"
+  ],
+  "rewrite_leads": [
+    "\"",
+    "'",
+    "=",
+    " ",
+    "(",
+    "\\",
+    "\\u0027"
+  ],
+  "rewrite_suffixes": [
+    "/",
+    "\\/"
+  ],
+  "rewrite": [
+    {
+      "from": "\"/index.htm",
+      "to": "\"{base}/index.htm"
+    },
+    {
+      "from": "'/index.htm",
+      "to": "'{base}/index.htm"
+    },
+    {
+      "from": "\"/login.htm",
+      "to": "\"{base}/login.htm"
+    },
+    {
+      "from": "'/login.htm",
+      "to": "'{base}/login.htm"
+    },
+    {
+      "from": "\"/logout.htm",
+      "to": "\"{base}/logout.htm"
+    },
+    {
+      "from": "'/logout.htm",
+      "to": "'{base}/logout.htm"
+    },
+    {
+      "from": "window.location.href='/'",
+      "to": "window.location.href='{base}/'"
+    }
+  ],
+  "notes": "Rewrites the absolute paths of the WebUI like the official OpenCCU proxy add-on. Allow Home Assistant in the OpenCCU firewall."
+}

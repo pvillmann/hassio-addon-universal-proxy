@@ -5,8 +5,13 @@ Ingress proxy for several externally hosted web apps. Each app gets its own side
 ```yaml
 services:
   - name: evcc
+    template: evcc
     url: http://192.168.1.50:7070
-    icon: mdi:ev-station
+  - name: Grafana
+    url: http://192.168.1.60:3000
+    icon: mdi:chart-line
 ```
+
+Templates for known apps: `evcc`, `frigate`, `openccu`. Everything else is `custom`.
 
 See the Documentation tab for setup, security notes and limits.

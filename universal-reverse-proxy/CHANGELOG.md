@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Templates for known apps: `evcc`, `frigate` (user/role headers and `secret`), `openccu` (rewrites the WebUI's absolute paths like the official OpenCCU proxy, admins only). `custom` stays the default.
+- Redirects to an absolute path stay inside the service
+- The log shows at start whether each service is reachable
+- New icon and logo
+
 ## 0.4.1
 
 - `user_headers` also sends the role as `Remote-Groups`. Frigate passes only `Remote-Groups` (not `Remote-Role`) to its auth check, so map the role from `remote-groups` there.

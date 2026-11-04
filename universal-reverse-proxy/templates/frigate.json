@@ -1,0 +1,7 @@
+{
+  "title": "Frigate",
+  "icon": "mdi:cctv",
+  "user_headers": true,
+  "secret_header": "X-Proxy-Secret",
+  "notes": "Use the authenticated port 8971 (https). Frigate config: proxy.auth_secret = secret, header_map.user = remote-user, header_map.role = remote-groups, default_role = viewer."
+}

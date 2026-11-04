@@ -10,52 +10,51 @@ One add-on for several externally hosted web apps (evcc, Frigate, OpenCCU, …).
 
 ## Configuration
 
+Pick a **template** for a known app, it brings the right settings along. Everything else is `custom` (the default).
+
 ```yaml
 services:
   - name: evcc
+    template: evcc
     url: http://192.168.1.50:7070
-    icon: mdi:ev-station
   - name: Frigate
-    url: http://192.168.1.60:5000
-    icon: mdi:cctv
-    admin_only: true
+    template: frigate
+    url: https://192.168.1.60:8971
+    secret: <long random string>
+  - name: OpenCCU
+    template: openccu
+    url: http://192.168.1.70
+  - name: Something else
+    url: http://192.168.1.80:8080
+    icon: mdi:web
 ```
 
 | Option | Required | Description |
 |---|---|---|
 | `name` | yes | Sidebar title. Also the path: lowercase, other characters become `-` (`evcc` → `/evcc/`). |
+| `template` | no | `custom` (default), `evcc`, `frigate` or `openccu`, see [Templates](#templates). |
 | `url` | yes | Where Home Assistant reaches the app. |
-| `icon` | no | Any `mdi:` icon, default `mdi:web`. |
+| `secret` | template | Shared secret for templates that need one (Frigate). |
+| `icon` | no | Any `mdi:` icon. Default: the template's icon, else `mdi:web`. |
 | `admin_only` | no | Admins only: hides the sidebar entry and blocks non-admins (403). |
 | `user_headers` | no | Send the Home Assistant user as `Remote-User` (username) and the role (`admin` or `viewer`) as `Remote-Role` and `Remote-Groups`. |
 | `headers` | no | Extra fixed headers, `Name: value` (no `$ " \ ; { }`), e.g. a shared secret. |
 
-The integration picks up changes within a minute. The add-on needs a restart after changing services.
+Your own settings always win over the template's. The integration picks up changes within a minute. The add-on needs a restart after changing services. At start the log tells you for every service whether Home Assistant can reach it.
 
-## Security
+## Templates
 
-- Requests reach the add-on only through Home Assistant ingress. Ingress requires a logged-in Home Assistant user, also via Nabu Casa or any reverse proxy. The add-on opens no port of its own, and nginx accepts only the Supervisor ingress gateway.
-- The Supervisor tells the add-on who is logged in (`X-Remote-User-*` headers) and removes headers of that name sent by the browser. `admin_only` uses the user's groups from there, so it is enforced, not only hidden. Needs Supervisor 2026.10.5 or newer.
-- `Remote-User`, `Remote-Role` and `Remote-Groups` are always set by the proxy (empty when `user_headers` is off), so a browser can't inject them. The `X-Remote-User-*` headers are not passed on to the apps.
-- Like the single-app proxies, the add-on removes `X-Frame-Options` and `Content-Security-Policy` from responses so the apps can be shown inside Home Assistant.
+| Template | What it does | You set |
+|---|---|---|
+| `evcc` | Icon. evcc works under a subpath as is. | `url` |
+| `frigate` | Icon, Home Assistant user → Frigate user, admins → Frigate admin, everyone else → viewer, sends `secret` as `X-Proxy-Secret`. | `url` (port **8971**, https), `secret`, Frigate config below |
+| `openccu` | Icon, admins only, rewrites the absolute paths of the WebUI (same rules as the official OpenCCU proxy add-on). | `url`; allow Home Assistant in the OpenCCU firewall |
 
-## Frigate with Home Assistant users
+### Frigate
 
-Admins log in to Frigate as admin, everyone else as viewer. Use Frigate's authenticated port and a shared secret, so nobody else in the network can send these headers to Frigate:
-
-```yaml
-# add-on
-services:
-  - name: Frigate
-    url: https://192.168.1.60:8971
-    icon: mdi:cctv
-    user_headers: true
-    headers:
-      - "X-Proxy-Secret: <long random string>"
-```
+Frigate's config, with the same secret as in the add-on:
 
 ```yaml
-# Frigate config
 proxy:
   auth_secret: <same string>
   header_map:
@@ -64,11 +63,23 @@ proxy:
   default_role: viewer
 ```
 
-Frigate hands only some headers (`Remote-User`, `Remote-Groups`, …) to its auth check, `Remote-Role` is not among them, so the role must come from `remote-groups`. If Frigate is also reachable through another reverse proxy, let that proxy overwrite `Remote-User` and `Remote-Groups` too (e.g. fixed `viewer`), otherwise a client could send its own.
+The secret makes sure nobody else in the network can send these headers to Frigate's port 8971. Frigate hands only some headers to its auth check (`Remote-User`, `Remote-Groups`, …, but not `Remote-Role`), so the role comes from `remote-groups`. If Frigate is also reachable through another reverse proxy, let that proxy send the secret and overwrite `Remote-User` and `Remote-Groups` (e.g. fixed `viewer`), otherwise a client could send its own.
+
+### New templates
+
+A template is a small JSON file in `universal-reverse-proxy/templates/`, pull requests welcome. Keys: `icon`, `admin_only`, `user_headers`, `secret_header`, `headers`, and for apps with absolute paths `rewrite_paths`, `rewrite_leads`, `rewrite_suffixes` and `rewrite` (`{"from": …, "to": …}`, `{base}` = path of the service). Add icon and admin default to `TEMPLATE_DEFAULTS` of the integration too.
+
+## Security
+
+- Requests reach the add-on only through Home Assistant ingress. Ingress requires a logged-in Home Assistant user, also via Nabu Casa or any reverse proxy. The add-on opens no port of its own, and nginx accepts only the Supervisor ingress gateway.
+- The Supervisor tells the add-on who is logged in (`X-Remote-User-*` headers) and removes headers of that name sent by the browser. `admin_only` uses the user's groups from there, so it is enforced, not only hidden. Needs Supervisor 2026.10.5 or newer, with older versions everyone counts as non-admin.
+- `Remote-User`, `Remote-Role` and `Remote-Groups` are always set by the proxy (empty when `user_headers` is off), so a browser can't inject them. The `X-Remote-User-*` headers are not passed on to the apps.
+- Like the single-app proxies, the add-on removes `X-Frame-Options` and `Content-Security-Policy` from responses so the apps can be shown inside Home Assistant.
+- https upstreams are not verified (self-signed certificates are common on the LAN).
 
 ## Apps under a subpath
 
-Each service runs under its own path (`…/evcc/`). Apps with relative links work as is (evcc does). Apps that support a base path via the `X-Ingress-Path` header (Frigate) get it per service. Apps that hard-code absolute paths (`/css/…`) do not work under a subpath, use a dedicated proxy add-on for them.
+Each service runs under its own path (`…/evcc/`). This works for apps with relative links (evcc), apps that take their base path from the `X-Ingress-Path` header (Frigate, set per service) and apps with a template that rewrites their paths (OpenCCU). Redirects to an absolute path are kept inside the service. Apps that build absolute paths in JavaScript at runtime may still break as `custom`. If one of them matters to you, open an issue, it may be a candidate for a template.
 
 ## How the sidebar entries work
 

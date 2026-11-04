@@ -1,10 +1,12 @@
+<img src="universal-reverse-proxy/logo.png" alt="Universal Proxy" width="250">
+
 # Universal Proxy for Home Assistant
 
 One add-on instead of one proxy add-on per app: list your externally hosted web apps (evcc, Frigate, OpenCCU, …) and each one gets its own sidebar entry, opening inside Home Assistant like an ingress add-on.
 
 This repository contains both parts:
 
-- **Universal Reverse Proxy** (add-on, `universal-reverse-proxy/`): nginx ingress proxy, one path per service.
+- **Universal Reverse Proxy** (add-on, `universal-reverse-proxy/`): nginx ingress proxy, one path per service, templates for known apps (evcc, Frigate, OpenCCU) plus `custom` for anything else.
 - **Universal Proxy** (integration, `custom_components/universal_proxy/`): registers the sidebar entries.
 
 ## Install

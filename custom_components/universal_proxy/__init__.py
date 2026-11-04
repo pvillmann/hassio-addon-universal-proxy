@@ -20,7 +20,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import CONF_ADDON, PANEL_COMPONENT, PANEL_PREFIX
+from .const import CONF_ADDON, PANEL_COMPONENT, PANEL_PREFIX, TEMPLATE_DEFAULTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,10 +50,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             slug = service_slug(str(service.get("name", "")))
             if not slug:
                 continue
+            defaults = TEMPLATE_DEFAULTS.get(service.get("template", "custom"), {})
             wanted[f"{PANEL_PREFIX}{slug}"] = (
                 service["name"],
-                service.get("icon") or "mdi:web",
-                bool(service.get("admin_only", False)),
+                service.get("icon") or defaults.get("icon") or "mdi:web",
+                bool(service.get("admin_only", defaults.get("admin_only", False))),
             )
 
         for path in set(registered) - set(wanted):
