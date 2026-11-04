@@ -1,0 +1,28 @@
+name: Close issues
+
+# GitHub closes issues from "Closes #n" only for the default branch (main).
+# Templates are merged into catalog, so do it here.
+on:
+  push:
+    branches: [catalog]
+
+permissions:
+  issues: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const text = context.payload.commits.map(c => c.message).join("\n");
+            const nums = [...new Set([...text.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?) #(\d+)/gi)].map(m => Number(m[1])))];
+            for (const issue_number of nums) {
+              const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number });
+              if (issue.state !== "open" || issue.pull_request) continue;
+              await github.rest.issues.createComment({ ...context.repo, issue_number,
+                body: "Added to the template catalog. The add-on loads it within a day, no update needed." });
+              await github.rest.issues.update({ ...context.repo, issue_number, state: "closed", state_reason: "completed" });
+              core.info(`closed #${issue_number}`);
+            }
