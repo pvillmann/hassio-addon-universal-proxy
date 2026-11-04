@@ -4,13 +4,16 @@ One add-on for several externally hosted web apps (evcc, Frigate, OpenCCU, …).
 
 ## Setup
 
-1. Install this add-on and configure the services (see below), then start it.
-2. Install the companion integration **Universal Proxy** via HACS (custom repository, same URL as this add-on repository) and add it under Settings → Devices & services. It finds the add-on by itself.
-3. Optional: turn off "Show in sidebar" for the add-on itself. Its own entry only shows a list of all services.
+1. Install this add-on and start it.
+2. Install the companion integration **Universal Proxy** via HACS (custom repository, same URL as this add-on repository), restart Home Assistant and add it under Settings → Devices & services. It finds the add-on by itself.
+3. Universal Proxy → **Configure** → *Add a service*: pick a template from the catalog (or `custom`), the form asks only for what that template needs. *Edit a service* and *Remove a service* work the same way. Each change restarts the add-on.
+4. Optional: turn off "Show in sidebar" for the add-on itself. Its own entry only shows a list of all services.
+
+You can also edit the services in the add-on's configuration, see below.
 
 ## Configuration
 
-Pick a **template** for a known app, it brings the right settings along. Everything else is `custom` (the default).
+The dialog of the integration writes these options for you. To edit them by hand, pick a **template** for a known app, it brings the right settings along. Everything else is `custom` (the default).
 
 ```yaml
 services:

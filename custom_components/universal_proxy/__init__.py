@@ -10,49 +10,21 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
-import re
 
 from aiohasupervisor import SupervisorError
-import aiohttp
 
 from homeassistant.components import frontend
 from homeassistant.components.hassio import get_supervisor_client
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
 
+from .addon import async_fetch_addon_json, service_slug
 from .const import CONF_ADDON, PANEL_COMPONENT, PANEL_PREFIX, TEMPLATE_DEFAULTS
 
 _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(minutes=1)
-
-
-def service_slug(name: str) -> str:
-    """Return the service path, derived exactly like the add-on does."""
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-
-
-async def _fetch_services(hass: HomeAssistant, info) -> list[dict] | None:
-    """Service list as the add-on built it (with catalog templates applied)."""
-    host = getattr(info, "ip_address", None) or getattr(info, "hostname", None)
-    port = getattr(info, "ingress_port", None) or 8099
-    if not host:
-        return None
-    try:
-        async with async_get_clientsession(hass).get(
-            f"http://{host}:{port}/_services.json",
-            timeout=aiohttp.ClientTimeout(total=5),
-        ) as resp:
-            if resp.status != 200:
-                return None
-            data = await resp.json(content_type=None)
-    except (aiohttp.ClientError, TimeoutError, ValueError):
-        return None
-    if not isinstance(data, list) or not all(isinstance(s, dict) for s in data):
-        return None
-    return data
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -69,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             return
 
         wanted: dict[str, tuple] = {}
-        built = await _fetch_services(hass, info) if info.state == "started" else None
+        built = await async_fetch_addon_json(hass, info, "_services.json")
         if built is not None:
             # the add-on knows the templates in use, also those from the catalog
             for service in built:
@@ -120,6 +92,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         registered.clear()
 
     await async_sync()
+    # the setup dialog (options flow) calls this after it changed the services
+    entry.runtime_data = async_sync
     entry.async_on_unload(async_track_time_interval(hass, async_sync, SCAN_INTERVAL))
     entry.async_on_unload(async_remove_panels)
     return True
