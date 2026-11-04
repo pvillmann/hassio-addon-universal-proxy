@@ -1,6 +1,6 @@
 ---
 name: Universal Reverse Proxy
-version: 0.7.0
+version: 0.8.0
 slug: universal_reverse_proxy
 description: Ingress proxy for several externally hosted web apps, each with its own sidebar entry (does not run the apps itself)
 url: https://github.com/pvillmann/hassio-addon-universal-proxy
@@ -24,10 +24,7 @@ timeout: 30
 watchdog: http://[HOST]:[PORT:8099]/healthz
 options:
   catalog_updates: true
-  services:
-    - name: evcc
-      template: evcc
-      url: http://evcc.local:7070
+  services: []
 schema:
   catalog_updates: bool
   services:
