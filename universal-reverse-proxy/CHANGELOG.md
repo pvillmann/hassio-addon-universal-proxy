@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0
+
+- The add-on starts without services: a new installation needs no YAML, services are added in the integration's dialog
+- New start page: says where to add services, and that the integration is missing if it is not set up (English and German)
+- The configuration form points to the integration's dialog
+- Integration: the last service can be removed too
+- README: install steps around the dialog, diagram, templates table
+
 ## 0.7.0
 
 - Field descriptions in the configuration form work again (the translation file was not valid YAML since 0.6.0)

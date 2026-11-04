@@ -169,16 +169,10 @@ class ServicesOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Pick the service to remove."""
-        errors: dict[str, str] = {}
         if user_input is not None:
-            if len(self._services) == 1:
-                errors["base"] = "last_service"
-            else:
-                del self._services[int(user_input["service"])]
-                return await self._async_save()
-        return self.async_show_form(
-            step_id="remove", data_schema=self._service_picker(), errors=errors
-        )
+            del self._services[int(user_input["service"])]
+            return await self._async_save()
+        return self.async_show_form(step_id="remove", data_schema=self._service_picker())
 
     # --------------------------------------------------------- service
 

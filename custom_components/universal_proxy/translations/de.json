@@ -69,8 +69,7 @@
       "name_taken": "Ein anderer Dienst nutzt diesen Namen (Pfad) schon.",
       "invalid_url": "Erwartet: http(s)://host:port",
       "secret_required": "Dieses Template braucht ein Secret.",
-      "invalid_header": "Erwartet: Name: Wert, ohne $ \" \\ ; { }",
-      "last_service": "Das Add-on braucht mindestens einen Dienst."
+      "invalid_header": "Erwartet: Name: Wert, ohne $ \" \\ ; { }"
     },
     "abort": {
       "cannot_connect": "Supervisor nicht erreichbar.",

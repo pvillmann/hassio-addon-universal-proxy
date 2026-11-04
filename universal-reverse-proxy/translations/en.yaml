@@ -8,8 +8,9 @@ configuration:
   services:
     name: Services
     description: >
-      One entry per web app. The sidebar entries need the companion
-      integration "Universal Proxy" (HACS, same repository).
+      Easiest: set up services in the integration (Settings → Devices &
+      services → Universal Proxy → Configure), it writes this list for you.
+      Edit here only if you prefer YAML. One entry per web app.
     fields:
       name:
         name: Name

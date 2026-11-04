@@ -126,8 +126,7 @@ NORMALIZE='{
 generate() {
 	count=$(jq -r '.services | length' "$OPTIONS_FILE" 2>/dev/null || echo 0)
 	if [ "$count" -le 0 ]; then
-		echo "No services configured. Add at least one entry to options.services."
-		exit 1
+		echo "No services yet. Add them in Home Assistant: Settings -> Devices & services -> Universal Proxy -> Configure."
 	fi
 
 	: > "$SERVICES_FILE"
@@ -318,8 +317,8 @@ CONF
 	done
 
 	mkdir -p "$HTML_DIR"
-	write_index "$HTML_DIR/index-admin.html" "$slugs_all" "$links_all"
-	write_index "$HTML_DIR/index-viewer.html" "$slugs_viewer" "$links_viewer"
+	write_index "$HTML_DIR/index-admin.html" "$slugs_all" "$links_all" true
+	write_index "$HTML_DIR/index-viewer.html" "$slugs_viewer" "$links_viewer" false
 
 	# for the companion integration (sidebar entries, setup dialog), no secrets
 	printf '%s' "$info_json" > "$HTML_DIR/_services.json"
@@ -330,8 +329,9 @@ CONF
 
 write_index() {
 	file="$1"
-	slug_list=$(printf '%s' "$2" | jq -Rc 'split(" ") | map(select(. != ""))')
+	slug_list=$(printf '%s' "$2" | jq -Rsc 'split(" ") | map(select(. != ""))')
 	links="$3"
+	admin="$4"
 	cat > "$file" <<HTML
 <!doctype html>
 <html>
@@ -340,9 +340,19 @@ write_index() {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Proxy</title>
 <style>
-body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
-#list { display: none; }
-@media (prefers-color-scheme: dark) { body { background: #111; color: #e1e1e1; } a { color: #8ab4f8; } }
+:root { --bg: #fafafa; --card: #fff; --text: #212121; --muted: #616161; --line: #e0e0e0; --accent: #4f46e5; }
+@media (prefers-color-scheme: dark) { :root { --bg: #111; --card: #1c1c1c; --text: #e1e1e1; --muted: #9e9e9e; --line: #333; --accent: #8b8cf6; } }
+body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; background: var(--bg); color: var(--text); }
+main { max-width: 640px; margin: 0 auto; display: none; }
+h1 { font-size: 22px; margin: 0 0 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card p { margin: 0 0 8px; color: var(--muted); line-height: 1.5; }
+.card p:last-child { margin-bottom: 0; }
+ul { list-style: none; margin: 0; padding: 0; }
+li a { display: block; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+li:last-child a { border-bottom: 0; }
+a { color: var(--accent); }
+.hidden { display: none; }
 </style>
 <script>
 // Each service has its own sidebar panel (registered by the companion
@@ -350,9 +360,29 @@ body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
 // it runs in, the page then jumps to that service.
 (function () {
   var services = ${slug_list};
+  var admin = ${admin};
   var done = false;
+  var text = {
+    en: { title: "Proxy", none: "No services yet.", setup: "Add services in the integration: Settings → Devices & services → Universal Proxy → <a target=\"_top\" href=\"/config/integrations/integration/universal_proxy\">Configure</a>.", missing: "The integration <b>Universal Proxy</b> is not set up. It adds the sidebar entries and the setup dialog. Install it via HACS, then <a target=\"_top\" href=\"/config/integrations/dashboard/add?domain=universal_proxy\">add it</a>.", list: "Services" },
+    de: { title: "Proxy", none: "Noch keine Dienste.", setup: "Dienste legst du in der Integration an: Einstellungen → Geräte & Dienste → Universal Proxy → <a target=\"_top\" href=\"/config/integrations/integration/universal_proxy\">Konfigurieren</a>.", missing: "Die Integration <b>Universal Proxy</b> ist nicht eingerichtet. Sie sorgt für die Einträge in der Seitenleiste und den Einrichtungsdialog. Über HACS installieren, dann <a target=\"_top\" href=\"/config/integrations/dashboard/add?domain=universal_proxy\">hinzufügen</a>.", list: "Dienste" }
+  };
+  function hass() {
+    // same origin as the Home Assistant frontend
+    try { return window.parent.document.querySelector("home-assistant").hass; } catch (e) { return null; }
+  }
+  function show(id, html) { var el = document.getElementById(id); el.innerHTML = html; el.parentNode.classList.remove("hidden"); }
   function showList() {
-    if (!done) { done = true; document.getElementById("list").style.display = "block"; }
+    if (done) return;
+    done = true;
+    var h = hass();
+    var t = text[(h && h.language || navigator.language || "en").slice(0, 2)] || text.en;
+    document.getElementById("title").textContent = t.title;
+    document.getElementById("list-title").textContent = t.list;
+    var integration = !h || !h.config || h.config.components.indexOf("universal_proxy") !== -1;
+    if (admin && !integration) show("missing", t.missing);
+    if (!services.length) show("empty", t.none + (admin && integration ? " " + t.setup : ""));
+    else document.getElementById("services").classList.remove("hidden");
+    document.querySelector("main").style.display = "block";
   }
   window.addEventListener("message", function (ev) {
     if (ev.source !== window.parent || !ev.data || ev.data.type !== "home-assistant/properties") return;
@@ -373,10 +403,12 @@ body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
 </script>
 </head>
 <body>
-<div id="list">
-<h1>Proxy</h1>
-<ul>${links}</ul>
-</div>
+<main>
+<h1 id="title">Proxy</h1>
+<div class="card hidden"><p id="missing"></p></div>
+<div class="card hidden"><p id="empty"></p></div>
+<div class="card hidden" id="services"><p id="list-title">Services</p><ul>${links}</ul></div>
+</main>
 </body>
 </html>
 HTML

@@ -69,8 +69,7 @@
       "name_taken": "Another service already uses this name (path).",
       "invalid_url": "Expected http(s)://host:port",
       "secret_required": "This template needs a secret.",
-      "invalid_header": "Expected Name: value, without $ \" \\ ; { }",
-      "last_service": "The add-on needs at least one service."
+      "invalid_header": "Expected Name: value, without $ \" \\ ; { }"
     },
     "abort": {
       "cannot_connect": "Cannot reach the Supervisor.",
