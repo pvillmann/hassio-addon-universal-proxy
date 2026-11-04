@@ -14,6 +14,14 @@ jobs:
     container: alpine:3.22
     steps:
       - uses: actions/checkout@v4
-      - run: apk add --no-cache nginx jq
+      - run: apk add --no-cache nginx jq python3 py3-yaml
+      - name: YAML and JSON files parse
+        run: |
+          for f in universal-reverse-proxy/*.yaml universal-reverse-proxy/translations/*.yaml repository.yaml .github/*/*.yml; do
+            python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$f" || { echo "invalid YAML: $f"; exit 1; }
+          done
+          for f in custom_components/*/*.json custom_components/*/translations/*.json hacs.json; do
+            jq empty "$f" || { echo "invalid JSON: $f"; exit 1; }
+          done
       - name: Check the bundled templates and the nginx config
         run: sh tools/check-templates.sh universal-reverse-proxy/templates

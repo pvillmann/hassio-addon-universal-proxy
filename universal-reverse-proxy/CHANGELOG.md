@@ -1,8 +1,9 @@
 # Changelog
 
-## Integration 0.7.0
+## 0.7.0
 
-- Set up services in a dialog: Universal Proxy → Configure → add, edit or remove a service. Pick a template from the catalog, the form shows only the fields it needs, with help and setup notes. Writes the add-on options and restarts the add-on.
+- Field descriptions in the configuration form work again (the translation file was not valid YAML since 0.6.0)
+- Integration: set up services in a dialog: Universal Proxy → Configure → add, edit or remove a service. Pick a template from the catalog, the form shows only the fields it needs, with help and setup notes. Writes the add-on options and restarts the add-on.
 - README with install buttons
 - Icon and logo for the integration (`brand/`)
 
