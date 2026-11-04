@@ -257,9 +257,15 @@ class ServicesOptionsFlow(OptionsFlow):
             schema[vol.Required("user_headers", default=bool(current.get("user_headers", False)))] = BooleanSelector()
             schema[vol.Optional("headers", description={"suggested_value": current.get("headers") or []})] = TextSelector(TextSelectorConfig(multiple=True))
 
+        data_schema = vol.Schema(schema)
+        if user_input is not None:
+            # keep what was entered when a field had an error (not the secret)
+            data_schema = self.add_suggested_values_to_schema(
+                data_schema, {k: v for k, v in user_input.items() if k != "secret"}
+            )
         return self.async_show_form(
             step_id="service",
-            data_schema=vol.Schema(schema),
+            data_schema=data_schema,
             errors=errors,
             description_placeholders={
                 "template": template.get("name", "custom"),
