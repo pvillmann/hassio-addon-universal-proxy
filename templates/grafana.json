@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "id": "grafana",
+  "name": "Grafana",
+  "revision": 1,
+  "min_addon": "0.9.0",
+  "tested_with": "Grafana 13.3",
+  "homepage": "https://grafana.com",
+  "icon": "mdi:chart-line",
+  "user_headers": true,
+  "role_values": {
+    "admin": "Admin",
+    "viewer": "Viewer"
+  },
+  "fields": {
+    "url": {
+      "example": "http://192.168.1.60:3000",
+      "help": "Address of Grafana."
+    }
+  },
+  "setup": "Signs Home Assistant users in to Grafana: admins become Grafana admins, everyone else viewer. Add to `grafana.ini` (or the matching `GF_…` environment variables) and restart Grafana:\n\n```ini\n[server]\nroot_url = %(protocol)s://%(domain)s{base}/\nserve_from_sub_path = true\n\n[auth.proxy]\nenabled = true\nheader_name = Remote-User\nheader_property = username\nauto_sign_up = true\nheaders = Role:Remote-Role\nwhitelist = <IP of Home Assistant>\n```\n\nThe `whitelist` matters: only Home Assistant may send the login headers. With `serve_from_sub_path` Grafana answers under this path only, also when opened directly."
+}
