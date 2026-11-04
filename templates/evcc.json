@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "id": "evcc",
+  "name": "evcc",
+  "revision": 1,
+  "min_addon": "0.6.0",
+  "tested_with": "evcc 0.318",
+  "homepage": "https://evcc.io",
+  "icon": "mdi:ev-station",
+  "fields": {
+    "url": {
+      "example": "http://192.168.1.50:7070",
+      "help": "Address of the evcc web interface."
+    }
+  },
+  "setup": "Works as is, evcc uses relative links."
+}

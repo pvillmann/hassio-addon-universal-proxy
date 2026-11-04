@@ -1,0 +1,46 @@
+name: Templates
+
+on:
+  pull_request:
+    branches: [catalog]
+  push:
+    branches: [catalog]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    container: alpine:3.22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: catalog
+      # rules and config generator always come from main, not from the pull request
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: addon
+      - run: apk add --no-cache nginx jq
+      - name: Check the templates and the nginx config
+        run: sh addon/tools/check-templates.sh catalog/templates
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+      - name: Changed templates need a higher revision
+        if: github.event_name == 'pull_request'
+        run: |
+          failed=0
+          for f in catalog/templates/*.json; do
+            old="base/templates/$(basename "$f")"
+            [ -f "$old" ] || continue
+            if [ "$(jq -S . "$f")" != "$(jq -S . "$old")" ] &&
+              [ "$(jq .revision "$f")" -le "$(jq .revision "$old")" ]; then
+              echo "$(basename "$f" .json): changed, raise revision above $(jq .revision "$old")"
+              failed=1
+            fi
+          done
+          exit $failed
