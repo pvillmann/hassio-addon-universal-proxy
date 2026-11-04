@@ -1,8 +1,8 @@
 ---
 name: Universal Reverse Proxy
-version: 0.2.12
+version: 0.3.0
 slug: universal_reverse_proxy
-description: Home Assistant Ingress reverse proxy add-on for externally hosted web apps via configurable subpaths (it does not run upstream apps itself)
+description: Ingress proxy for several externally hosted web apps, each with its own sidebar entry (does not run the apps itself)
 url: https://github.com/pvillmann/hassio-addon-universal-proxy
 arch:
   - armv7
@@ -10,6 +10,9 @@ arch:
   - amd64
 startup: application
 panel_icon: mdi:swap-horizontal
+panel_title: Proxy
+# must stay false: the per-service panels use this add-on's ingress, an
+# admin-only add-on would lock non-admins out of every service
 panel_admin: false
 boot: auto
 stage: experimental
@@ -18,10 +21,16 @@ ingress_stream: true
 ingress_port: 8099
 init: true
 timeout: 30
-watchdog: http://[HOST]:[PORT:8099]
+watchdog: http://[HOST]:[PORT:8099]/healthz
 options:
-  routes:
-    - /evcc|http://evcc.local:7070
+  services:
+    - name: evcc
+      url: http://evcc.local:7070
+      icon: mdi:ev-station
+      admin_only: false
 schema:
-  routes:
-    - str
+  services:
+    - name: str
+      url: url
+      icon: str?
+      admin_only: bool?

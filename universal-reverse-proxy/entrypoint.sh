@@ -2,7 +2,7 @@
 set -eu
 
 OPTIONS_FILE="/data/options.json"
-ROUTES_FILE="/etc/nginx/routes.conf"
+SERVICES_FILE="/etc/nginx/services.conf"
 INDEX_FILE="/usr/share/nginx/html/index.html"
 
 if [ ! -f "$OPTIONS_FILE" ]; then
@@ -10,154 +10,114 @@ if [ ! -f "$OPTIONS_FILE" ]; then
 	exit 1
 fi
 
-route_count=$(jq -r '.routes | length' "$OPTIONS_FILE" 2>/dev/null || echo "0")
-
-if [ "$route_count" -le 0 ]; then
-	echo "No routes configured. Add at least one entry to options.routes (format: /path|http://host:port)."
+count=$(jq -r '.services | length' "$OPTIONS_FILE" 2>/dev/null || echo 0)
+if [ "$count" -le 0 ]; then
+	echo "No services configured. Add at least one entry to options.services."
 	exit 1
 fi
 
-: > "$ROUTES_FILE"
+# path of a service = its name, lowercased, everything else than a-z0-9 -> "-"
+# (the companion integration derives the sidebar URL the same way)
+slugify() {
+	printf '%s' "$1" | tr 'A-Z' 'a-z' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//'
+}
 
-mkdir -p "$(dirname "$INDEX_FILE")"
+: > "$SERVICES_FILE"
+slugs=""
+links=""
 
-cat > "$INDEX_FILE" <<EOF
-<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Universal Reverse Proxy</title>
-		<script>
-			document.addEventListener('DOMContentLoaded', function () {
-				var basePath = window.location.pathname;
-				if (!basePath.endsWith('/')) {
-					basePath += '/';
-				}
+i=0
+while [ "$i" -lt "$count" ]; do
+	name=$(jq -r ".services[$i].name" "$OPTIONS_FILE")
+	url=$(jq -r ".services[$i].url" "$OPTIONS_FILE" | sed 's#/*$##')
+	slug=$(slugify "$name")
+	i=$((i + 1))
 
-				document.querySelectorAll('a[data-route]').forEach(function (link) {
-					var route = link.getAttribute('data-route').replace(/^\/+/, '');
-					link.href = basePath + route + '/';
-				});
-			});
-		</script>
-	</head>
-	<body>
-		<h1>Universal Reverse Proxy</h1>
-		<p>Configured routes:</p>
-		<ul>
-EOF
-
-jq -r '.routes[]' "$OPTIONS_FILE" | while IFS= read -r route; do
-	path="${route%%|*}"
-	target_url="${route#*|}"
-
-	if [ "$path" = "$route" ] || [ -z "$path" ] || [ -z "$target_url" ]; then
-		echo "Invalid route '$route'. Expected format: /path|http://host:port"
+	if [ -z "$slug" ]; then
+		echo "Service '$name': name needs at least one letter or digit."
 		exit 1
 	fi
-
-	case "$path" in
-		/*) ;;
-		*)
-			echo "Invalid path '$path' in route '$route'. Path must start with '/'."
+	if ! printf '%s' "$url" | grep -Eq '^https?://[^[:space:]]+$'; then
+		echo "Service '$name': invalid url '$url', expected http(s)://host:port"
+		exit 1
+	fi
+	case " $slugs " in
+		*" $slug "*)
+			echo "Service '$name': path '/$slug/' is already used by another service."
 			exit 1
 			;;
 	esac
+	slugs="$slugs $slug"
 
-	path="$(printf '%s' "$path" | sed 's#/*$##')"
+	cat >> "$SERVICES_FILE" <<EOF
+        location = /${slug} {
+            return 302 \$http_x_ingress_path/${slug}/;
+        }
 
-	if [ -z "$path" ] || [ "$path" = "/" ]; then
-		echo "Invalid path '$path' in route '$route'. Root path '/' is not allowed."
-		exit 1
-	fi
-
-	if ! printf '%s' "$path" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
-		echo "Invalid path '$path' in route '$route'. Allowed chars: a-z A-Z 0-9 . _ - /"
-		exit 1
-	fi
-
-	if ! printf '%s' "$target_url" | grep -Eq '^https?://[^[:space:]]+$'; then
-		echo "Invalid target URL '$target_url' in route '$route'."
-		exit 1
-	fi
-
-	target_origin="$(printf '%s' "$target_url" | sed 's#/*$##')"
-	target_host="$(printf '%s' "$target_origin" | sed -E 's#^https?://##')"
-
-	route_name="${path#/}"
-	printf '      <li><a href="#" data-route="%s">%s/</a> → %s</li>\n' "$route_name" "$path" "$target_url" >> "$INDEX_FILE"
-
-	if [ "$path" = "/opnsense" ]; then
-		cat >> "$ROUTES_FILE" <<EOF
-				location = ${path} {
-						return 302 ${path}/;
-				}
-
-				location ${path}/ {
-						proxy_pass ${target_url}/;
-						proxy_set_header Accept-Encoding "";
-						proxy_redirect ~^(/.*)$ ${path}\$1;
-						proxy_redirect ~^https?://[^/]+(/.*)$ ${path}\$1;
-						proxy_cookie_path / ${path}/;
-						sub_filter_types text/css application/javascript;
-						sub_filter '${target_origin}/' '${path}/';
-						sub_filter '${target_origin}' '${path}';
-						sub_filter '//${target_host}/' '${path}/';
-						sub_filter '<base href="/">' '<base href="${path}/">';
-						sub_filter 'href="/' 'href="${path}/';
-						sub_filter "href='/'" "href='${path}/'";
-						sub_filter 'src="/' 'src="${path}/';
-						sub_filter "src='/'" "src='${path}/'";
-						sub_filter 'action="/' 'action="${path}/';
-						sub_filter "action='/'" "action='${path}/'";
-						sub_filter 'content="/' 'content="${path}/';
-						sub_filter 'url(/' 'url(${path}/';
-						sub_filter_once off;
-				}
-
-				location ^~ /ui/ {
-						proxy_pass ${target_url}/ui/;
-				}
-
-				location ^~ /css/ {
-						proxy_pass ${target_url}/css/;
-				}
-
-				location ^~ /js/ {
-						proxy_pass ${target_url}/js/;
-				}
-
-				location ^~ /themes/ {
-						proxy_pass ${target_url}/themes/;
-				}
-
-				location ^~ /vendor/ {
-						proxy_pass ${target_url}/vendor/;
-				}
+        location /${slug}/ {
+            set \$service_ingress_path \$http_x_ingress_path/${slug};
+            proxy_pass ${url}/;
+        }
 
 EOF
-	else
-		cat >> "$ROUTES_FILE" <<EOF
-				location = ${path} {
-						return 302 ${path}/;
-				}
-
-				location ${path}/ {
-						proxy_pass ${target_url}/;
-				}
-
-EOF
-	fi
+	html_name=$(printf '%s' "$name" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+	links="$links<li><a href=\"${slug}/\">${html_name}</a></li>"
+	echo "Service '$name': /${slug}/ -> ${url}"
 done
 
-cat >> "$INDEX_FILE" <<EOF
-		</ul>
-	</body>
+slug_list=$(printf '%s' "$slugs" | jq -Rc 'split(" ") | map(select(. != ""))')
+
+mkdir -p "$(dirname "$INDEX_FILE")"
+cat > "$INDEX_FILE" <<EOF
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proxy</title>
+<style>
+body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
+#list { display: none; }
+@media (prefers-color-scheme: dark) { body { background: #111; color: #e1e1e1; } a { color: #8ab4f8; } }
+</style>
+<script>
+// Each service has its own sidebar panel (registered by the companion
+// integration) that loads this page. Home Assistant tells the page which panel
+// it runs in, the page then jumps to that service.
+(function () {
+  var services = ${slug_list};
+  var done = false;
+  function showList() {
+    if (!done) { done = true; document.getElementById("list").style.display = "block"; }
+  }
+  window.addEventListener("message", function (ev) {
+    if (ev.source !== window.parent || !ev.data || ev.data.type !== "home-assistant/properties") return;
+    var prefix = (ev.data.route && ev.data.route.prefix) || "";
+    var m = prefix.match(/^\/proxy-([a-z0-9-]+)$/);
+    if (!done && m && services.indexOf(m[1]) !== -1) {
+      done = true;
+      window.location.replace(m[1] + "/");
+      return;
+    }
+    showList();
+  });
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: "home-assistant/subscribe-properties" }, "*");
+  }
+  setTimeout(showList, 1500);
+})();
+</script>
+</head>
+<body>
+<div id="list">
+<h1>Proxy</h1>
+<ul>${links}</ul>
+</div>
+</body>
 </html>
 EOF
 
 cp /etc/nginx/nginx.conf.gtpl /etc/nginx/nginx.conf
 
-echo "Starting universal reverse proxy with ${route_count} route(s)"
+echo "Starting universal reverse proxy with ${count} service(s)"
 exec nginx -g 'daemon off;'

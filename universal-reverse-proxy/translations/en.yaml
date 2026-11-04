@@ -1,6 +1,9 @@
 configuration:
-  routes:
-    name: Route mappings
+  services:
+    name: Services
     description: >
-      List of route mappings in the format /subpath|http://target-host:port,
-      for example /evcc|http://192.168.1.50:7070.
+      One entry per web app. name: shown in the sidebar and used as path
+      (/evcc/), url: where Home Assistant reaches the app
+      (http://192.168.1.50:7070), icon: mdi icon (optional), admin_only: show
+      the sidebar entry to admins only (optional). The sidebar entries need the
+      companion integration "Universal Proxy" (HACS, same repository).

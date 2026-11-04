@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Universal Proxy",
+        "description": "Legt für jeden Dienst des Add-ons Universal Reverse Proxy einen Eintrag in der Seitenleiste an."
+      }
+    },
+    "abort": {
+      "not_hassio": "Braucht Home Assistant OS oder Supervised.",
+      "cannot_connect": "Supervisor nicht erreichbar.",
+      "addon_not_installed": "Bitte zuerst das Add-on Universal Reverse Proxy installieren.",
+      "already_configured": "Bereits eingerichtet."
+    }
+  }
+}

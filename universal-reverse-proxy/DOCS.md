@@ -1,46 +1,45 @@
-# Universal Reverse Proxy — Documentation
+# Universal Reverse Proxy
 
-This add-on is a Home Assistant Ingress reverse proxy for externally hosted web applications.
-It does not run upstream applications itself.
+One add-on for several externally hosted web apps (evcc, Frigate, OpenCCU, …). Each app gets its own sidebar entry with its own name, icon and admin setting, and opens inside Home Assistant like an ingress add-on. The add-on does not run the apps itself.
 
-## Prerequisites
+## Setup
 
-- Home Assistant host can reach each upstream service directly.
-- Each upstream web UI is reachable at a known URL (e.g. `http://192.168.1.50:7070`).
+1. Install this add-on and configure the services (see below), then start it.
+2. Install the companion integration **Universal Proxy** via HACS (custom repository, same URL as this add-on repository) and add it under Settings → Devices & services. It finds the add-on by itself.
+3. Optional: turn off "Show in sidebar" for the add-on itself. Its own entry only shows a list of all services.
 
 ## Configuration
 
-| Option | Required | Description |
-|--------|----------|-------------|
-| `routes` | yes | List of route mappings in the format `/subpath|http://target-host:port` |
-
-**Example:**
-
 ```yaml
-routes:
-	- /evcc|http://192.168.1.50:7070
-	- /router|http://192.168.1.1
+services:
+  - name: evcc
+    url: http://192.168.1.50:7070
+    icon: mdi:ev-station
+  - name: Frigate
+    url: http://192.168.1.60:5000
+    icon: mdi:cctv
+    admin_only: true
 ```
 
-## How it works
+| Option | Required | Description |
+|---|---|---|
+| `name` | yes | Sidebar title. Also the path: lowercase, other characters become `-` (`evcc` → `/evcc/`). |
+| `url` | yes | Where Home Assistant reaches the app. |
+| `icon` | no | Any `mdi:` icon, default `mdi:web`. |
+| `admin_only` | no | Show the sidebar entry to admins only. |
 
-The add-on runs an nginx reverse proxy inside a container.
-Home Assistant Ingress forwards requests to the proxy (port 8099).
-The proxy routes requests by subpath to the configured upstream URL.
-WebSocket connections are forwarded transparently.
+The integration picks up changes within a minute. The add-on needs a restart after changing services.
 
-Route behavior:
+## Security
 
-- `/evcc` redirects to `/evcc/`
-- `/evcc/*` proxies to `http://.../*`
+- Requests reach the add-on only through Home Assistant ingress. Ingress requires a logged-in Home Assistant user, also via Nabu Casa or any reverse proxy. The add-on opens no port of its own, and nginx accepts only the Supervisor ingress gateway.
+- `admin_only` hides the sidebar entry. A logged-in non-admin who knows the path can still open the service. Use the app's own login for sensitive apps.
+- Like the single-app proxies, the add-on removes `X-Frame-Options` and `Content-Security-Policy` from responses so the apps can be shown inside Home Assistant.
 
-## Firewall notes
+## Apps under a subpath
 
-Home Assistant must be able to reach each configured target URL directly.
-If upstream systems have firewalls enabled, allow the IP address of your HA host.
+Each service runs under its own path (`…/evcc/`). Apps with relative links work as is (evcc does). Apps that support a base path via the `X-Ingress-Path` header (Frigate) get it per service. Apps that hard-code absolute paths (`/css/…`) do not work under a subpath, use a dedicated proxy add-on for them.
 
-## Troubleshooting
+## How the sidebar entries work
 
-- **404 on root**: open a configured subpath (for example `/evcc/`).
-- **502 Bad Gateway**: upstream target is not reachable at the configured URL.
-- **Container fails to start**: check route format, it must be `/subpath|http://host:port`.
+The Supervisor gives an add-on exactly one sidebar entry. The integration registers one more ingress panel per service, pointing to this add-on. All of them load the add-on's start page, which asks Home Assistant which panel it runs in and jumps to the matching service. This uses internal frontend behaviour, a Home Assistant update may require an update of the integration.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+- Breaking: `routes` replaced by `services` (name, url, icon, admin_only)
+- Each service gets its own sidebar entry via the companion integration "Universal Proxy" (HACS, same repository)
+- Start page jumps to the service of the sidebar entry it is opened from
+- Access limited to the Supervisor ingress gateway, like the Frigate proxy
+- `X-Ingress-Path` per service (base path for apps like Frigate)
+- Removed the OPNsense-specific rewrites, the proxy is generic again
+- Healthcheck on `/healthz`, base image 21.0.0
+
 ## 0.2.12
 
 - Added OPNsense route rewrites for absolute upstream origin URLs (including protocol-relative URLs) to keep asset loading inside the proxied subpath

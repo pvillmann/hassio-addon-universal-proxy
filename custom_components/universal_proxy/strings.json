@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Universal Proxy",
+        "description": "Adds a sidebar entry for every service of the Universal Reverse Proxy add-on."
+      }
+    },
+    "abort": {
+      "not_hassio": "Needs Home Assistant OS or Supervised.",
+      "cannot_connect": "Cannot reach the Supervisor.",
+      "addon_not_installed": "Install the Universal Reverse Proxy add-on first.",
+      "already_configured": "Already set up."
+    }
+  }
+}
