@@ -5,7 +5,7 @@ configuration:
       One entry per web app. name: sidebar title and path (/evcc/). url: where
       Home Assistant reaches the app. icon: mdi icon (optional). admin_only:
       admins only, others get no sidebar entry and no access (optional).
-      user_headers: send the Home Assistant user as Remote-User/Remote-Role
+      user_headers: send the Home Assistant user as Remote-User and the role as Remote-Role/Remote-Groups
       (optional). headers: extra fixed headers "Name: value" (optional). The
       sidebar entries need the companion integration "Universal Proxy" (HACS,
       same repository).

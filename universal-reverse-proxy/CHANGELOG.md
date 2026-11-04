@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- `user_headers` also sends the role as `Remote-Groups`. Frigate passes only `Remote-Groups` (not `Remote-Role`) to its auth check, so map the role from `remote-groups` there.
+
 ## 0.4.0
 
 - `admin_only` is enforced: non-admins get 403, the start page lists only their services (uses the user groups the Supervisor sends, Supervisor 2026.10.5+)

@@ -106,7 +106,8 @@ while [ "$i" -lt "$count" ]; do
             # base path for apps that support it (e.g. Frigate)
             proxy_set_header X-Ingress-Path \$http_x_ingress_path/${slug};
             proxy_set_header Remote-User ${user_value};
-            proxy_set_header Remote-Role ${role_value};${extra}
+            proxy_set_header Remote-Role ${role_value};
+            proxy_set_header Remote-Groups ${role_value};${extra}
         }
 
 EOF
