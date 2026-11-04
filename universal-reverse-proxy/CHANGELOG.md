@@ -4,6 +4,7 @@
 
 - Set up services in a dialog: Universal Proxy → Configure → add, edit or remove a service. Pick a template from the catalog, the form shows only the fields it needs, with help and setup notes. Writes the add-on options and restarts the add-on.
 - README with install buttons
+- Icon and logo for the integration (`brand/`)
 
 ## 0.6.2
 
