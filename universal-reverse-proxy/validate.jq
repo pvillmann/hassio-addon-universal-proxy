@@ -9,7 +9,7 @@
 
 def top_keys: ["format", "id", "name", "revision", "min_addon", "tested_with",
   "homepage", "icon", "admin_only", "user_headers", "fields", "setup",
-  "headers", "rewrite", "charset"];
+  "headers", "rewrite", "charset", "role_values"];
 def leads: ["\"", "'", "=", " ", "(", "\\", "\\u0027"];
 def suffixes: ["/", "\\/", "?", "\"", "'"];
 
@@ -21,11 +21,14 @@ def path_ok: type == "string" and test("^/[A-Za-z0-9._~/-]{1,100}$");
 def header_name_ok:
   type == "string" and test("^[A-Za-z0-9-]{1,64}$")
   and (ascii_downcase
-    | (IN("host", "connection", "upgrade", "x-real-ip", "x-ingress-path")
-       or startswith("remote-") or startswith("x-forwarded-")
-       or startswith("x-remote-user"))
+    | (IN("host", "connection", "upgrade", "x-real-ip", "x-ingress-path", "forwarded",
+          "x-forwarded-for", "x-forwarded-proto", "x-forwarded-host", "x-forwarded-port")
+       or startswith("remote-") or startswith("x-remote-user"))
     | not);
-def header_value_ok: type == "string" and length <= 200 and test("^[^$\"\\\\;{}\r\n]*$");
+# {base} (the service path from the Supervisor) is the only placeholder allowed
+def header_value_ok:
+  type == "string" and length <= 200
+  and (gsub("\\{base\\}"; "") | test("^[^$\"\\\\;{}\r\n]*$"));
 # a rule may only put {base} (the ingress path) in front of a path
 def rule_ok:
   only_keys(["from", "to"])
@@ -59,7 +62,7 @@ if type != "object" then "template must be a JSON object" else
       and (.help | opt(text(500)))); "fields.secret: header (allowed name), required, help"),
     check(.headers | opt(type == "object" and (to_entries
       | all(.[]; (.key | header_name_ok) and (.value | header_value_ok))));
-      "headers: allowed names, values without $ \" \\ ; { }"),
+      "headers: allowed names, values without $ \" \\ ; { } (except {base})"),
     check($r | only_keys(["paths", "leads", "suffixes", "rules"]); "rewrite: paths, leads, suffixes, rules"),
     check($r.paths | opt(type == "array" and all(.[]; path_ok)); "rewrite.paths: paths like /api"),
     check($r.leads | opt(type == "array" and all(.[]; IN(leads[]))); "rewrite.leads: only \(leads | tojson)"),
@@ -68,6 +71,9 @@ if type != "object" then "template must be a JSON object" else
       "rewrite.rules: \"to\" must be \"from\" with {base} put once in front of a /"),
     check((($r.paths // []) | length) * (($r.leads // [0, 0]) | length) * (($r.suffixes // [0]) | length)
       + (($r.rules // []) | length) <= 500; "rewrite: more than 500 rules"),
+    check(.role_values | opt(only_keys(["admin", "viewer"])
+      and all(.[]; type == "string" and test("^[A-Za-z0-9_-]{1,32}$")));
+      "role_values: admin and viewer, letters, digits, _ and -"),
     check(.charset | opt(only_keys(["source", "skip"])
       and .source == "iso-8859-1" and (.skip | opt(path_ok))); "charset: source iso-8859-1, skip a path")
 end

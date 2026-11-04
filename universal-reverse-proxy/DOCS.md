@@ -41,7 +41,7 @@ services:
 | `icon` | no | Any `mdi:` icon. Default: the template's icon, else `mdi:web`. |
 | `admin_only` | no | Admins only: hides the sidebar entry and blocks non-admins (403). |
 | `user_headers` | no | Send the Home Assistant user as `Remote-User` (username) and the role (`admin` or `viewer`) as `Remote-Role` and `Remote-Groups`. |
-| `headers` | no | Extra fixed headers, `Name: value` (no `$ " \ ; { }`), e.g. a shared secret. |
+| `headers` | no | Extra fixed headers, `Name: value` (no `$ " \ ; { }`), e.g. a shared secret. `{base}` is replaced with the path of the service, e.g. `X-Forwarded-Prefix: {base}`. |
 
 Your own settings always win over the template's. The integration picks up changes within a minute. The add-on needs a restart after changing services. At start the log tells you for every service the template revision in use and whether Home Assistant can reach it.
 

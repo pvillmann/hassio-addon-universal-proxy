@@ -118,7 +118,7 @@ NORMALIZE='{
 	rewrite_paths: .rewrite.paths, rewrite_leads: .rewrite.leads,
 	rewrite_suffixes: .rewrite.suffixes, rewrite: .rewrite.rules,
 	source_charset: .charset.source, recode_skip: .charset.skip,
-	revision
+	role_values, revision
 } | with_entries(select(.value != null))'
 
 # writes services.conf, maps.conf, the start pages and the info for the
@@ -190,6 +190,18 @@ generate() {
 		if [ "$user_headers" = "true" ]; then
 			user_value='$http_x_remote_user_name'
 			role_value='$ha_role'
+			# app specific role names (template), e.g. Grafana wants Admin/Viewer
+			roles=$(printf '%s' "$svc" | jq -c '.role_values // empty')
+			if [ -n "$roles" ]; then
+				rvar="role_$(printf '%s' "$slug" | tr '-' '_')"
+				{
+					echo "    map \$ha_is_admin \$$rvar {"
+					echo "        1       $(printf '%s' "$roles" | jq -r '.admin // "admin"' | sed 's/^/"/; s/$/"/');"
+					echo "        default $(printf '%s' "$roles" | jq -r '.viewer // "viewer"' | sed 's/^/"/; s/$/"/');"
+					echo "    }"
+				} >> "$MAPS_FILE"
+				role_value="\$$rvar"
+			fi
 		else
 			user_value='""'
 			role_value='""'
@@ -221,10 +233,12 @@ generate() {
 				echo "Service '$name': invalid header '$hname', expected 'Name: value'"
 				exit 1
 			fi
-			if printf '%s' "$hvalue" | grep -q '[$"\;{}]'; then
-				echo "Service '$name': header $hname must not contain \$ \" \\ ; { }"
+			# {base} = path of the service, the only placeholder
+			if printf '%s' "$hvalue" | sed 's/{base}//g' | grep -q '[$"\;{}]'; then
+				echo "Service '$name': header $hname must not contain \$ \" \\ ; { } (except {base})"
 				exit 1
 			fi
+			hvalue=$(printf '%s' "$hvalue" | sed "s#{base}#\$http_x_ingress_path/${slug}#g")
 			extra="$extra
             proxy_set_header $hname \"$hvalue\";"
 		done

@@ -62,6 +62,10 @@
         "data": {
           "service": "Service"
         }
+      },
+      "done": {
+        "title": "Almost done",
+        "description": "The service is saved. Configure this base path in the app, otherwise it won't load:\n\n`{path}`\n\n{setup}"
       }
     },
     "error": {
