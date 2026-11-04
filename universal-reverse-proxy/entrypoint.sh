@@ -3,7 +3,8 @@ set -eu
 
 OPTIONS_FILE="/data/options.json"
 SERVICES_FILE="/etc/nginx/services.conf"
-INDEX_FILE="/usr/share/nginx/html/index.html"
+COMMON_FILE="/etc/nginx/proxy_common.conf"
+HTML_DIR="/usr/share/nginx/html"
 
 if [ ! -f "$OPTIONS_FILE" ]; then
 	echo "Missing options file: $OPTIONS_FILE"
@@ -22,22 +23,32 @@ slugify() {
 	printf '%s' "$1" | tr 'A-Z' 'a-z' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//'
 }
 
+html_escape() {
+	printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
+}
+
 : > "$SERVICES_FILE"
 slugs=""
-links=""
+slugs_all=""
+slugs_viewer=""
+links_all=""
+links_viewer=""
 
 i=0
 while [ "$i" -lt "$count" ]; do
-	name=$(jq -r ".services[$i].name" "$OPTIONS_FILE")
-	url=$(jq -r ".services[$i].url" "$OPTIONS_FILE" | sed 's#/*$##')
-	slug=$(slugify "$name")
+	svc=$(jq -c ".services[$i]" "$OPTIONS_FILE")
 	i=$((i + 1))
+	name=$(printf '%s' "$svc" | jq -r '.name')
+	url=$(printf '%s' "$svc" | jq -r '.url' | sed 's#/*$##')
+	admin_only=$(printf '%s' "$svc" | jq -r '.admin_only // false')
+	user_headers=$(printf '%s' "$svc" | jq -r '.user_headers // false')
+	slug=$(slugify "$name")
 
 	if [ -z "$slug" ]; then
 		echo "Service '$name': name needs at least one letter or digit."
 		exit 1
 	fi
-	if ! printf '%s' "$url" | grep -Eq '^https?://[^[:space:]]+$'; then
+	if ! printf '%s' "$url" | grep -Eq '^https?://[^[:space:]";$]+$'; then
 		echo "Service '$name': invalid url '$url', expected http(s)://host:port"
 		exit 1
 	fi
@@ -49,26 +60,71 @@ while [ "$i" -lt "$count" ]; do
 	esac
 	slugs="$slugs $slug"
 
+	guard=""
+	if [ "$admin_only" = "true" ]; then
+		guard='if ($ha_is_admin = 0) { return 403; }'
+	fi
+
+	if [ "$user_headers" = "true" ]; then
+		user_value='$http_x_remote_user_name'
+		role_value='$ha_role'
+	else
+		user_value='""'
+		role_value='""'
+	fi
+
+	extra=""
+	j=0
+	n=$(printf '%s' "$svc" | jq -r '.headers // [] | length')
+	while [ "$j" -lt "$n" ]; do
+		h=$(printf '%s' "$svc" | jq -r ".headers[$j]")
+		j=$((j + 1))
+		hname=$(printf '%s' "$h" | sed -E 's/^([^:]*):.*/\1/' | sed -E 's/^ +| +$//g')
+		hvalue=$(printf '%s' "$h" | sed -E 's/^[^:]*: *//')
+		if [ "$hname" = "$h" ] || ! printf '%s' "$hname" | grep -Eq '^[A-Za-z0-9-]+$'; then
+			echo "Service '$name': invalid header '$h', expected 'Name: value'"
+			exit 1
+		fi
+		if printf '%s' "$hvalue" | grep -q '[$"\;{}]'; then
+			echo "Service '$name': header $hname must not contain \$ \" \\ ; { }"
+			exit 1
+		fi
+		extra="$extra
+            proxy_set_header $hname \"$hvalue\";"
+	done
+
 	cat >> "$SERVICES_FILE" <<EOF
         location = /${slug} {
+            ${guard}
             return 302 \$http_x_ingress_path/${slug}/;
         }
 
         location /${slug}/ {
-            set \$service_ingress_path \$http_x_ingress_path/${slug};
+            ${guard}
             proxy_pass ${url}/;
+            include ${COMMON_FILE};
+            # base path for apps that support it (e.g. Frigate)
+            proxy_set_header X-Ingress-Path \$http_x_ingress_path/${slug};
+            proxy_set_header Remote-User ${user_value};
+            proxy_set_header Remote-Role ${role_value};${extra}
         }
 
 EOF
-	html_name=$(printf '%s' "$name" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
-	links="$links<li><a href=\"${slug}/\">${html_name}</a></li>"
-	echo "Service '$name': /${slug}/ -> ${url}"
+	link="<li><a href=\"${slug}/\">$(html_escape "$name")</a></li>"
+	links_all="$links_all$link"
+	slugs_all="$slugs_all $slug"
+	if [ "$admin_only" != "true" ]; then
+		links_viewer="$links_viewer$link"
+		slugs_viewer="$slugs_viewer $slug"
+	fi
+	echo "Service '$name': /${slug}/ -> ${url}$([ "$admin_only" = true ] && echo ' (admin only)')$([ "$user_headers" = true ] && echo ' (user headers)')"
 done
 
-slug_list=$(printf '%s' "$slugs" | jq -Rc 'split(" ") | map(select(. != ""))')
-
-mkdir -p "$(dirname "$INDEX_FILE")"
-cat > "$INDEX_FILE" <<EOF
+write_index() {
+	file="$1"
+	slug_list=$(printf '%s' "$2" | jq -Rc 'split(" ") | map(select(. != ""))')
+	links="$3"
+	cat > "$file" <<EOF
 <!doctype html>
 <html>
 <head>
@@ -116,6 +172,11 @@ body { font-family: system-ui, sans-serif; margin: 24px; color: #212121; }
 </body>
 </html>
 EOF
+}
+
+mkdir -p "$HTML_DIR"
+write_index "$HTML_DIR/index-admin.html" "$slugs_all" "$links_all"
+write_index "$HTML_DIR/index-viewer.html" "$slugs_viewer" "$links_viewer"
 
 cp /etc/nginx/nginx.conf.gtpl /etc/nginx/nginx.conf
 

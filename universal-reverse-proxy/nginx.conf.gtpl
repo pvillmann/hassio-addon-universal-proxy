@@ -10,15 +10,19 @@ http {
     access_log /dev/stdout;
     absolute_redirect off;
 
+    # The Supervisor sends the Home Assistant user's groups with every ingress
+    # request and drops any client-supplied X-Remote-User-* header, so this
+    # cannot be spoofed by the browser.
+    map $http_x_remote_user_groups $ha_is_admin {
+        default                          0;
+        "~(^|,)system-admin(,|$)"        1;
+    }
+    map $ha_is_admin $ha_role {
+        1       admin;
+        default viewer;
+    }
+
     proxy_http_version          1.1;
-    proxy_set_header            Host $http_host;
-    proxy_set_header            Upgrade $http_upgrade;
-    proxy_set_header            Connection "upgrade";
-    proxy_set_header            X-Real-IP $remote_addr;
-    proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header            X-Forwarded-Proto $scheme;
-    # ingress prefix of the service, set per location (Frigate uses it as base path)
-    proxy_set_header            X-Ingress-Path $service_ingress_path;
     proxy_read_timeout          600s;
     proxy_send_timeout          600s;
     proxy_connect_timeout       10s;
@@ -37,16 +41,15 @@ http {
         allow 127.0.0.1;
         deny  all;
 
-        set $service_ingress_path $http_x_ingress_path;
-
         location = /healthz {
             access_log off;
             return 200 "ok\n";
         }
 
+        # admins get the full service list, everyone else without admin-only services
         location = / {
             root /usr/share/nginx/html;
-            try_files /index.html =404;
+            try_files /index-$ha_role.html =404;
         }
 
         include /etc/nginx/services.conf;

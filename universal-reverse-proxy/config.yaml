@@ -1,6 +1,6 @@
 ---
 name: Universal Reverse Proxy
-version: 0.3.0
+version: 0.4.0
 slug: universal_reverse_proxy
 description: Ingress proxy for several externally hosted web apps, each with its own sidebar entry (does not run the apps itself)
 url: https://github.com/pvillmann/hassio-addon-universal-proxy
@@ -34,3 +34,6 @@ schema:
       url: url
       icon: str?
       admin_only: bool?
+      user_headers: bool?
+      headers:
+        - str?

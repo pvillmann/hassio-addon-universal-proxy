@@ -3,6 +3,7 @@ FROM ghcr.io/hassio-addons/base:21.0.0
 RUN apk add --no-cache nginx gettext curl jq
 
 COPY nginx.conf.gtpl /etc/nginx/nginx.conf.gtpl
+COPY proxy_common.conf /etc/nginx/proxy_common.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

@@ -26,15 +26,43 @@ services:
 | `name` | yes | Sidebar title. Also the path: lowercase, other characters become `-` (`evcc` → `/evcc/`). |
 | `url` | yes | Where Home Assistant reaches the app. |
 | `icon` | no | Any `mdi:` icon, default `mdi:web`. |
-| `admin_only` | no | Show the sidebar entry to admins only. |
+| `admin_only` | no | Admins only: hides the sidebar entry and blocks non-admins (403). |
+| `user_headers` | no | Send the Home Assistant user as `Remote-User` (username) and `Remote-Role` (`admin` or `viewer`). |
+| `headers` | no | Extra fixed headers, `Name: value` (no `$ " \ ; { }`), e.g. a shared secret. |
 
 The integration picks up changes within a minute. The add-on needs a restart after changing services.
 
 ## Security
 
 - Requests reach the add-on only through Home Assistant ingress. Ingress requires a logged-in Home Assistant user, also via Nabu Casa or any reverse proxy. The add-on opens no port of its own, and nginx accepts only the Supervisor ingress gateway.
-- `admin_only` hides the sidebar entry. A logged-in non-admin who knows the path can still open the service. Use the app's own login for sensitive apps.
+- The Supervisor tells the add-on who is logged in (`X-Remote-User-*` headers) and removes headers of that name sent by the browser. `admin_only` uses the user's groups from there, so it is enforced, not only hidden. Needs Supervisor 2026.10.5 or newer.
+- `Remote-User` and `Remote-Role` are always set by the proxy (empty when `user_headers` is off), so a browser can't inject them. The `X-Remote-User-*` headers are not passed on to the apps.
 - Like the single-app proxies, the add-on removes `X-Frame-Options` and `Content-Security-Policy` from responses so the apps can be shown inside Home Assistant.
+
+## Frigate with Home Assistant users
+
+Admins log in to Frigate as admin, everyone else as viewer. Use Frigate's authenticated port and a shared secret, so nobody else in the network can send these headers to Frigate:
+
+```yaml
+# add-on
+services:
+  - name: Frigate
+    url: https://192.168.1.60:8971
+    icon: mdi:cctv
+    user_headers: true
+    headers:
+      - "X-Proxy-Secret: <long random string>"
+```
+
+```yaml
+# Frigate config
+proxy:
+  auth_secret: <same string>
+  header_map:
+    user: remote-user
+    role: remote-role
+  default_role: viewer
+```
 
 ## Apps under a subpath
 

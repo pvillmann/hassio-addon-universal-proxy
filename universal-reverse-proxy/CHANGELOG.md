@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- `admin_only` is enforced: non-admins get 403, the start page lists only their services (uses the user groups the Supervisor sends, Supervisor 2026.10.5+)
+- `user_headers`: send the Home Assistant user as `Remote-User` and `Remote-Role` (admin/viewer), e.g. for Frigate's proxy auth
+- `headers`: extra fixed headers per service, e.g. Frigate's `X-Proxy-Secret`
+- Browser-supplied `Remote-User`/`Remote-Role` and the internal `X-Remote-User-*` headers never reach the apps
+
 ## 0.3.0
 
 - Breaking: `routes` replaced by `services` (name, url, icon, admin_only)
