@@ -62,6 +62,14 @@ Settings → Devices & services → **Universal Proxy** → **Configure** → *A
 2. Fill in the form. It asks only for what the app needs, usually the name and the address, and shows setup notes (for Frigate the config snippet).
 3. Done: the add-on restarts and the app appears in the sidebar.
 
+<table><tr>
+<td valign="top"><img src="assets/screenshots/add-service.png" alt="Pick the app from the template catalog" width="380"></td>
+<td valign="top"><img src="assets/screenshots/frigate-form.png" alt="Frigate form: only the fields it needs, with setup notes" width="380"></td>
+</tr><tr>
+<td>Pick the app from the catalog</td>
+<td>The form asks only for what the app needs</td>
+</tr></table>
+
 *Edit a service* and *Remove a service* work the same way.
 
 <details><summary>Manual install (without the buttons)</summary>
