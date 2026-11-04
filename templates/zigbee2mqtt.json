@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "id": "zigbee2mqtt",
+  "name": "Zigbee2MQTT",
+  "revision": 1,
+  "min_addon": "0.6.0",
+  "tested_with": "Zigbee2MQTT 2.14",
+  "homepage": "https://www.zigbee2mqtt.io",
+  "icon": "mdi:zigbee",
+  "admin_only": true,
+  "fields": {
+    "url": {
+      "example": "http://192.168.1.60:8080",
+      "help": "Address of the Zigbee2MQTT frontend (frontend port, default 8080)."
+    }
+  },
+  "setup": "For Zigbee2MQTT running outside Home Assistant (Docker, LXC, another host). As a Home Assistant add-on it has its own sidebar entry already.\n\nTurn on the frontend in the Zigbee2MQTT configuration (`frontend: enabled: true`, port 8080) and make sure Home Assistant can reach that port. Admins only by default: the frontend can pair, rename and remove devices. With `frontend: auth_token` set, it asks for the token once."
+}
