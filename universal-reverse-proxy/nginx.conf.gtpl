@@ -22,6 +22,12 @@ http {
         default viewer;
     }
 
+    # The Supervisor drops the charset from Content-Type. Templates of apps with
+    # a legacy charset recode their AJAX (POST) answers to UTF-8, which browsers
+    # assume when no charset is given (pages keep their <meta charset>).
+    include /etc/nginx/latin1.conf;
+    include /etc/nginx/maps.conf;
+
     proxy_http_version          1.1;
     proxy_read_timeout          600s;
     proxy_send_timeout          600s;

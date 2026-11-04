@@ -48,7 +48,7 @@ Your own settings always win over the template's. The integration picks up chang
 |---|---|---|
 | `evcc` | Icon. evcc works under a subpath as is. | `url` |
 | `frigate` | Icon, Home Assistant user → Frigate user, admins → Frigate admin, everyone else → viewer, sends `secret` as `X-Proxy-Secret`. | `url` (port **8971**, https), `secret`, Frigate config below |
-| `openccu` | Icon, admins only, rewrites the absolute paths of the WebUI (same rules as the official OpenCCU proxy add-on). | `url`; allow Home Assistant in the OpenCCU firewall |
+| `openccu` | Icon, admins only, rewrites the absolute paths of the WebUI and recodes AJAX answers from ISO-8859-1 to UTF-8 (same rules as the official OpenCCU proxy add-on). | `url`; allow Home Assistant in the OpenCCU firewall |
 
 ### Frigate
 
@@ -67,7 +67,7 @@ The secret makes sure nobody else in the network can send these headers to Friga
 
 ### New templates
 
-A template is a small JSON file in `universal-reverse-proxy/templates/`, pull requests welcome. Keys: `icon`, `admin_only`, `user_headers`, `secret_header`, `headers`, and for apps with absolute paths `rewrite_paths`, `rewrite_leads`, `rewrite_suffixes` and `rewrite` (`{"from": …, "to": …}`, `{base}` = path of the service). Add icon and admin default to `TEMPLATE_DEFAULTS` of the integration too.
+A template is a small JSON file in `universal-reverse-proxy/templates/`, pull requests welcome. Keys: `icon`, `admin_only`, `user_headers`, `secret_header`, `headers`, and for apps with absolute paths `rewrite_paths`, `rewrite_leads`, `rewrite_suffixes` and `rewrite` (`{"from": …, "to": …}`, `{base}` = path of the service), for apps with a legacy charset `source_charset` (answers to POST requests are recoded to UTF-8, the Supervisor drops the charset header) and `recode_skip`. Add icon and admin default to `TEMPLATE_DEFAULTS` of the integration too.
 
 ## Security
 

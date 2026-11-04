@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- `openccu`: umlauts in AJAX answers. The Supervisor drops the charset from `Content-Type`, so browsers read the CCU's ISO-8859-1 answers as UTF-8. Answers to POST requests are now recoded to UTF-8 (like the official OpenCCU proxy), pages keep their own charset.
+
 ## 0.5.0
 
 - Templates for known apps: `evcc`, `frigate` (user/role headers and `secret`), `openccu` (rewrites the WebUI's absolute paths like the official OpenCCU proxy, admins only). `custom` stays the default.

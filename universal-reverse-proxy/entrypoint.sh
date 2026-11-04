@@ -7,6 +7,7 @@ NGINX_DIR="${NGINX_DIR:-/etc/nginx}"
 TEMPLATE_DIR="${TEMPLATE_DIR:-/etc/nginx/templates}"
 HTML_DIR="${HTML_DIR:-/usr/share/nginx/html}"
 SERVICES_FILE="$NGINX_DIR/services.conf"
+MAPS_FILE="$NGINX_DIR/maps.conf"
 COMMON_FILE="$NGINX_DIR/proxy_common.conf"
 
 if [ ! -f "$OPTIONS_FILE" ]; then
@@ -36,6 +37,7 @@ nginx_quote() {
 }
 
 : > "$SERVICES_FILE"
+: > "$MAPS_FILE"
 slugs=""
 slugs_all=""
 slugs_viewer=""
@@ -139,7 +141,7 @@ while [ "$i" -lt "$count" ]; do
             # rewrite absolute paths in responses (template $template)
             proxy_set_header Accept-Encoding \"\";
             sub_filter_once off;
-            sub_filter_types text/css text/javascript application/javascript application/x-javascript application/json;"
+            sub_filter_types text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json;"
 		k=0
 		while [ "$k" -lt "$nrules" ]; do
 			from=$(printf '%s' "$rules" | jq -r ".[$k].from")
@@ -149,6 +151,26 @@ while [ "$i" -lt "$count" ]; do
 			rewrite="$rewrite
             sub_filter $(nginx_quote "$from") $to_q;"
 		done
+	fi
+
+	# legacy charset (template): recode POST answers to UTF-8, see nginx.conf
+	recode=""
+	source_charset=$(printf '%s' "$svc" | jq -r '.source_charset // ""')
+	if [ -n "$source_charset" ]; then
+		var="recode_$(printf '%s' "$slug" | tr '-' '_')"
+		skip=$(printf '%s' "$svc" | jq -r '.recode_skip // ""')
+		{
+			echo "    map \"\$request_method \$uri\" \$$var {"
+			[ -n "$skip" ] && echo "        \"~^POST .*$skip\" \"\";"
+			echo "        \"~^POST \" 1;"
+			echo "        default \"\";"
+			echo "    }"
+		} >> "$MAPS_FILE"
+		recode="
+            # answers to POST requests: $source_charset -> utf-8
+            source_charset $source_charset;
+            charset_types text/plain text/xml text/css text/javascript application/javascript application/json;
+            if (\$$var) { charset utf-8; }"
 	fi
 
 	cat >> "$SERVICES_FILE" <<CONF
@@ -168,7 +190,7 @@ while [ "$i" -lt "$count" ]; do
             proxy_set_header Remote-Groups ${role_value};${extra}
             # redirects to an absolute path stay inside the service
             proxy_redirect ${url}/ \$http_x_ingress_path/${slug}/;
-            proxy_redirect ~^/(?!api/hassio_ingress/)(.*)\$ \$http_x_ingress_path/${slug}/\$1;${rewrite}
+            proxy_redirect ~^/(?!api/hassio_ingress/)(.*)\$ \$http_x_ingress_path/${slug}/\$1;${rewrite}${recode}
         }
 
 CONF
